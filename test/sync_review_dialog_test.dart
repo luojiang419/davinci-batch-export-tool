@@ -95,19 +95,22 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('open'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
 
       expect(find.text('合板详情与复核'), findsOneWidget);
       expect(find.text('音频总字幕'), findsOneWidget);
       expect(find.text('总字幕: all_audio.srt'), findsOneWidget);
       expect(find.text('第一条说明'), findsOneWidget);
-      expect(find.text('音频总轨第二条准备收声 sync-1'), findsOneWidget);
+      expect(find.text('全部锚点'), findsOneWidget);
       expect(find.text('合板锚点 1/2'), findsOneWidget);
+      expect(find.text('锚点一预览成功'), findsOneWidget);
+      expect(find.text('视频第一条不匹配 sync-1'), findsNWidgets(2));
+      expect(find.text('音频总轨第一条不匹配 sync-1'), findsNWidgets(2));
 
-      final disabledMatchButton = tester.widget<OutlinedButton>(
+      final enabledMatchButtonOnOpen = tester.widget<OutlinedButton>(
         find.widgetWithText(OutlinedButton, '匹配'),
       );
-      expect(disabledMatchButton.onPressed, isNull);
+      expect(enabledMatchButtonOnOpen.onPressed, isNotNull);
 
       await tester.enterText(find.byType(TextField), '准备收声');
       await tester.pump();
@@ -115,33 +118,32 @@ void main() {
 
       expect(find.text('视频命中 1 / 音频命中 1'), findsOneWidget);
       expect(find.text('关键词结果 1 条'), findsNWidgets(2));
-      expect(find.text('视频第一条不匹配 sync-1'), findsNothing);
-      expect(find.text('音频总轨第一条不匹配 sync-1'), findsNothing);
 
       await tester.tap(find.text('视频第二条准备收声 sync-1'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('返回关键词列表'), findsOneWidget);
-      expect(find.text('视频第一条不匹配 sync-1'), findsOneWidget);
-      expect(find.text('音频总轨第一条不匹配 sync-1'), findsNothing);
+      expect(find.text('视频第二条准备收声 sync-1'), findsWidgets);
 
       await tester.tap(find.text('返回关键词列表'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('关键词结果 1 条'), findsNWidgets(2));
-      expect(find.text('视频第一条不匹配 sync-1'), findsNothing);
 
       await tester.tap(find.text('音频总轨第二条准备收声 sync-1'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('返回关键词列表'), findsOneWidget);
-      expect(find.text('音频总轨第一条不匹配 sync-1'), findsOneWidget);
-      expect(find.text('视频第一条不匹配 sync-1'), findsNothing);
+      expect(find.text('音频总轨第二条准备收声 sync-1'), findsWidgets);
+      expect(find.text('手动匹配预览成功'), findsOneWidget);
+      expect(find.text('合板锚点 2/2'), findsOneWidget);
+      expect(find.text('视频第二条准备收声 sync-1'), findsWidgets);
+      expect(find.text('音频总轨第二条准备收声 sync-1'), findsWidgets);
 
-      await tester.tap(find.widgetWithText(OutlinedButton, '合板锚点 1/2'));
+      await tester.tap(find.text('合板锚点 2/2'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
@@ -150,21 +152,11 @@ void main() {
       );
       expect(enabledByAnchorButton.onPressed, isNotNull);
       expect(find.text('锚点一预览成功'), findsOneWidget);
+      expect(find.text('合板锚点 1/2'), findsOneWidget);
       expect(find.text('视频命中 1 / 音频命中 1'), findsOneWidget);
       expect(find.text('返回关键词列表'), findsNWidgets(2));
       expect(find.text('视频第一条不匹配 sync-1'), findsWidgets);
       expect(find.text('音频总轨第一条不匹配 sync-1'), findsWidgets);
-
-      await tester.tap(find.widgetWithText(OutlinedButton, '合板锚点 1/2'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
-
-      expect(find.text('合板锚点 2/2'), findsOneWidget);
-      final enabledMatchButton = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, '匹配'),
-      );
-      expect(enabledMatchButton.onPressed, isNotNull);
-      expect(find.text('A0001_ALT.wav'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();

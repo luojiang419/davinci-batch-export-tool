@@ -15,6 +15,18 @@ enum _SubtitlePanelMode { fullTranscript, keywordList }
 
 enum SyncReviewDialogSequenceMode { pending, all, accepted, rejected }
 
+class _ResolvedAnchorPreviewItem {
+  final ReviewAnchorJumpTarget target;
+  final SubtitleClip videoClip;
+  final SubtitleClip aggregateAudioClip;
+
+  const _ResolvedAnchorPreviewItem({
+    required this.target,
+    required this.videoClip,
+    required this.aggregateAudioClip,
+  });
+}
+
 class SyncReviewDialog extends ConsumerStatefulWidget {
   final String projectId;
   final String syncResultId;
@@ -68,6 +80,7 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
   bool _isPreviewLoading = false;
   bool _isHandlingAction = false;
   int _previewRequestId = 0;
+  String? _anchorInitializedSyncResultId;
 
   @override
   void initState() {
@@ -189,6 +202,11 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
         _currentAnchorCycleIndex! >= resolvedReviewAnchors.length) {
       _currentAnchorCycleIndex = 0;
     }
+    final anchorPreviewItems = _buildResolvedAnchorPreviewItems(
+      detail,
+      resolvedReviewAnchors,
+    );
+    _ensureInitialAnchorSelection(resolvedReviewAnchors);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,7 +322,7 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
         const SizedBox(height: 16),
         _buildSearchBar(videoMatchedClips.length, audioMatchedClips.length),
         const SizedBox(height: 16),
-        _buildPreviewPanel(detail),
+        _buildPreviewPanel(detail, anchorPreviewItems),
         const SizedBox(height: 16),
         _buildActionBar(context, detail),
       ],
@@ -642,7 +660,10 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
     );
   }
 
-  Widget _buildPreviewPanel(SyncReviewDetail detail) {
+  Widget _buildPreviewPanel(
+    SyncReviewDetail detail,
+    List<_ResolvedAnchorPreviewItem> anchorPreviewItems,
+  ) {
     final selectedVideoClip = detail.videoSubtitles
         .cast<SubtitleClip?>()
         .firstWhere(
@@ -657,7 +678,7 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
         );
 
     return Container(
-      height: 220,
+      height: 320,
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(10),
@@ -678,30 +699,165 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: Row(
+              child: Column(
                 children: [
                   Expanded(
-                    child: _previewCard(
-                      title: '已选视频字幕',
-                      clip: selectedVideoClip,
-                      useGlobalTime: false,
+                    flex: 3,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _previewCard(
+                            title: '已选视频字幕',
+                            clip: selectedVideoClip,
+                            useGlobalTime: false,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _previewCard(
+                            title: '已选音频总字幕',
+                            clip: selectedAudioClip,
+                            useGlobalTime: true,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: _previewResultCard(detail)),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(height: 12),
                   Expanded(
-                    child: _previewCard(
-                      title: '已选音频总字幕',
-                      clip: selectedAudioClip,
-                      useGlobalTime: true,
-                    ),
+                    flex: 2,
+                    child: _buildAnchorPreviewList(anchorPreviewItems),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(child: _previewResultCard(detail)),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAnchorPreviewList(
+    List<_ResolvedAnchorPreviewItem> anchorPreviewItems,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            child: Text(
+              '全部锚点',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Divider(height: 1, color: AppTheme.border),
+          Expanded(
+            child: anchorPreviewItems.isEmpty
+                ? Center(
+                    child: Text(
+                      '当前结果没有可用锚点。',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: anchorPreviewItems.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final item = anchorPreviewItems[index];
+                      final isActive = _currentAnchorCycleIndex == index;
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          key: ValueKey('anchor-preview-item-$index'),
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: _isHandlingAction
+                              ? null
+                              : () => _activateResolvedAnchorAt(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? AppTheme.highlight.withValues(alpha: 0.14)
+                                  : AppTheme.surface,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isActive
+                                    ? AppTheme.highlight
+                                    : AppTheme.border,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    _chip(
+                                      '锚点',
+                                      '${index + 1}',
+                                      isActive
+                                          ? AppTheme.highlight
+                                          : AppTheme.textSecondary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _chip(
+                                      '相似度',
+                                      '${(item.target.similarity * 100).toStringAsFixed(0)}%',
+                                      AppTheme.success,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _chip(
+                                      '偏移',
+                                      _formatSignedTime(item.target.offsetMs),
+                                      AppTheme.accent,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '视频: ${item.videoClip.text}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 12,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '音频: ${item.aggregateAudioClip.text}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -1008,15 +1164,25 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
   }
 
   void _selectVideoClip(String clipId) {
+    final nextAnchorIndex = _findAnchorIndex(
+      videoClipId: clipId,
+      aggregateAudioClipId: _selectedAggregateAudioClipId,
+    );
     setState(() {
       _selectedVideoClipId = clipId;
+      _currentAnchorCycleIndex = nextAnchorIndex;
     });
     _refreshManualPreview();
   }
 
   void _selectAggregateAudioClip(String clipId) {
+    final nextAnchorIndex = _findAnchorIndex(
+      videoClipId: _selectedVideoClipId,
+      aggregateAudioClipId: clipId,
+    );
     setState(() {
       _selectedAggregateAudioClipId = clipId;
+      _currentAnchorCycleIndex = nextAnchorIndex;
     });
     _refreshManualPreview();
   }
@@ -1028,29 +1194,7 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
     final nextIndex = currentIndex == null
         ? 0
         : (currentIndex + 1) % anchors.length;
-    final nextAnchor = anchors[nextIndex];
-
-    setState(() {
-      _currentAnchorCycleIndex = nextIndex;
-      _videoPanelMode = _SubtitlePanelMode.fullTranscript;
-      _audioPanelMode = _SubtitlePanelMode.fullTranscript;
-      _selectedVideoClipId = nextAnchor.videoClipId;
-      _selectedAggregateAudioClipId = nextAnchor.aggregateAudioClipId;
-    });
-
-    _focusClip(
-      controller: _videoController,
-      itemKeys: _videoItemKeys,
-      allClips: _latestVideoClips,
-      clipId: nextAnchor.videoClipId,
-    );
-    _focusClip(
-      controller: _audioController,
-      itemKeys: _audioItemKeys,
-      allClips: _latestAggregateAudioClips,
-      clipId: nextAnchor.aggregateAudioClipId,
-    );
-    _refreshManualPreview();
+    _activateResolvedAnchorAt(nextIndex);
   }
 
   Future<void> _refreshManualPreview() async {
@@ -1142,9 +1286,14 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
   }
 
   void _openVideoKeywordResult(List<SubtitleClip> allClips, String clipId) {
+    final nextAnchorIndex = _findAnchorIndex(
+      videoClipId: clipId,
+      aggregateAudioClipId: _selectedAggregateAudioClipId,
+    );
     setState(() {
       _selectedVideoClipId = clipId;
       _videoPanelMode = _SubtitlePanelMode.fullTranscript;
+      _currentAnchorCycleIndex = nextAnchorIndex;
     });
     _focusClip(
       controller: _videoController,
@@ -1156,9 +1305,14 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
   }
 
   void _openAudioKeywordResult(List<SubtitleClip> allClips, String clipId) {
+    final nextAnchorIndex = _findAnchorIndex(
+      videoClipId: _selectedVideoClipId,
+      aggregateAudioClipId: clipId,
+    );
     setState(() {
       _selectedAggregateAudioClipId = clipId;
       _audioPanelMode = _SubtitlePanelMode.fullTranscript;
+      _currentAnchorCycleIndex = nextAnchorIndex;
     });
     _focusClip(
       controller: _audioController,
@@ -1285,6 +1439,7 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
     _audioPanelMode = _hasActiveSearch
         ? _SubtitlePanelMode.keywordList
         : _SubtitlePanelMode.fullTranscript;
+    _anchorInitializedSyncResultId = null;
   }
 
   void _jumpToTopAfterNavigation() {
@@ -1307,26 +1462,65 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
   }) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _ensureVisibleForClip(itemKeys, clipId);
-      final context = itemKeys[clipId]?.currentContext;
-      if (context != null) {
-        return;
-      }
-      final targetIndex = allClips.indexWhere((clip) => clip.id == clipId);
-      if (targetIndex < 0 || !controller.hasClients) {
-        return;
-      }
-
-      final estimatedOffset = (targetIndex * 96.0).clamp(
-        0.0,
-        controller.position.maxScrollExtent,
+      _focusClipWithRetry(
+        controller: controller,
+        itemKeys: itemKeys,
+        allClips: allClips,
+        clipId: clipId,
       );
-      controller.jumpTo(estimatedOffset);
+    });
+  }
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _ensureVisibleForClip(itemKeys, clipId);
-      });
+  void _focusClipWithRetry({
+    required ScrollController controller,
+    required Map<String, GlobalKey> itemKeys,
+    required List<SubtitleClip> allClips,
+    required String clipId,
+    int attempt = 0,
+  }) {
+    if (!mounted) return;
+    final context = itemKeys[clipId]?.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        alignment: 0.1,
+      );
+      return;
+    }
+
+    if (!controller.hasClients) {
+      return;
+    }
+
+    final targetIndex = allClips.indexWhere((clip) => clip.id == clipId);
+    if (targetIndex < 0) {
+      return;
+    }
+
+    final maxScrollExtent = controller.position.maxScrollExtent;
+    if (maxScrollExtent > 0 && allClips.length > 1) {
+      final estimatedOffset =
+          maxScrollExtent * (targetIndex / (allClips.length - 1));
+      controller.jumpTo(
+        estimatedOffset.clamp(0.0, controller.position.maxScrollExtent),
+      );
+    }
+
+    if (attempt >= 2) {
+      _ensureVisibleForClip(itemKeys, clipId);
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusClipWithRetry(
+        controller: controller,
+        itemKeys: itemKeys,
+        allClips: allClips,
+        clipId: clipId,
+        attempt: attempt + 1,
+      );
     });
   }
 
@@ -1366,6 +1560,109 @@ class _SyncReviewDialogState extends ConsumerState<SyncReviewDialog> {
         ),
       ),
     );
+  }
+
+  List<_ResolvedAnchorPreviewItem> _buildResolvedAnchorPreviewItems(
+    SyncReviewDetail detail,
+    List<ReviewAnchorJumpTarget> resolvedReviewAnchors,
+  ) {
+    if (resolvedReviewAnchors.isEmpty) {
+      return const [];
+    }
+
+    final videoById = {for (final clip in detail.videoSubtitles) clip.id: clip};
+    final aggregateById = {
+      for (final clip in detail.aggregateAudioSubtitles) clip.id: clip,
+    };
+
+    final items = <_ResolvedAnchorPreviewItem>[];
+    for (final target in resolvedReviewAnchors) {
+      final videoClip = videoById[target.videoClipId];
+      final aggregateAudioClip = aggregateById[target.aggregateAudioClipId];
+      if (videoClip == null || aggregateAudioClip == null) {
+        continue;
+      }
+      items.add(
+        _ResolvedAnchorPreviewItem(
+          target: target,
+          videoClip: videoClip,
+          aggregateAudioClip: aggregateAudioClip,
+        ),
+      );
+    }
+    return items;
+  }
+
+  void _ensureInitialAnchorSelection(
+    List<ReviewAnchorJumpTarget> resolvedReviewAnchors,
+  ) {
+    if (_anchorInitializedSyncResultId == _currentSyncResultId) {
+      return;
+    }
+    if (resolvedReviewAnchors.isEmpty) {
+      _anchorInitializedSyncResultId = _currentSyncResultId;
+      return;
+    }
+    if (_selectedVideoClipId != null || _selectedAggregateAudioClipId != null) {
+      _anchorInitializedSyncResultId = _currentSyncResultId;
+      return;
+    }
+
+    _anchorInitializedSyncResultId = _currentSyncResultId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _currentSyncResultId != _anchorInitializedSyncResultId) {
+        return;
+      }
+      _activateResolvedAnchorAt(0);
+    });
+  }
+
+  void _activateResolvedAnchorAt(int index) {
+    if (index < 0 || index >= _resolvedReviewAnchors.length) {
+      return;
+    }
+    final target = _resolvedReviewAnchors[index];
+    setState(() {
+      _currentAnchorCycleIndex = index;
+      _videoPanelMode = _SubtitlePanelMode.fullTranscript;
+      _audioPanelMode = _SubtitlePanelMode.fullTranscript;
+      _selectedVideoClipId = target.videoClipId;
+      _selectedAggregateAudioClipId = target.aggregateAudioClipId;
+    });
+
+    _focusClip(
+      controller: _videoController,
+      itemKeys: _videoItemKeys,
+      allClips: _latestVideoClips,
+      clipId: target.videoClipId,
+    );
+    _focusClip(
+      controller: _audioController,
+      itemKeys: _audioItemKeys,
+      allClips: _latestAggregateAudioClips,
+      clipId: target.aggregateAudioClipId,
+    );
+    _refreshManualPreview();
+  }
+
+  int? _findAnchorIndex({
+    required String? videoClipId,
+    required String? aggregateAudioClipId,
+  }) {
+    if (videoClipId == null || aggregateAudioClipId == null) {
+      return null;
+    }
+    final index = _resolvedReviewAnchors.indexWhere(
+      (target) =>
+          target.videoClipId == videoClipId &&
+          target.aggregateAudioClipId == aggregateAudioClipId,
+    );
+    return index == -1 ? null : index;
+  }
+
+  String _formatSignedTime(int ms) {
+    final sign = ms >= 0 ? '+' : '-';
+    return '$sign${_formatTime(ms.abs())}';
   }
 
   Color _reviewColor(SyncReviewStatus status) {
