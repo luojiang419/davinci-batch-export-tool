@@ -88,6 +88,9 @@ class DatabaseService {
     if (oldVersion < 4) {
       await _migrateToV4(db);
     }
+    if (oldVersion < 5) {
+      await _migrateToV5(db);
+    }
   }
 
   static Future<void> _createProjectsTable(Database db) async {
@@ -271,6 +274,7 @@ class DatabaseService {
         anchor_count INTEGER NOT NULL DEFAULT 0,
         source_clamped INTEGER NOT NULL DEFAULT 0,
         audio_too_short INTEGER NOT NULL DEFAULT 0,
+        timeline_offset_ms INTEGER NOT NULL DEFAULT 0,
         needs_review INTEGER NOT NULL DEFAULT 0,
         review_status TEXT NOT NULL DEFAULT 'pending',
         reviewed_at_ms INTEGER,
@@ -424,6 +428,14 @@ class DatabaseService {
     await _safeAddColumn(db, 'media_files', 'thumbnail_path TEXT');
   }
 
+  static Future<void> _migrateToV5(Database db) async {
+    await _safeAddColumn(
+      db,
+      'sync_results',
+      'timeline_offset_ms INTEGER NOT NULL DEFAULT 0',
+    );
+  }
+
   static Future<void> _migrateSubtitleClipsTable(Database db) async {
     await db.execute('ALTER TABLE subtitle_clips RENAME TO subtitle_clips_old');
     await _createSubtitleClipsTable(db);
@@ -494,6 +506,13 @@ class DatabaseService {
     }
     if (!columnNames.contains('review_note')) {
       await _safeAddColumn(db, 'sync_results', 'review_note TEXT');
+    }
+    if (!columnNames.contains('timeline_offset_ms')) {
+      await _safeAddColumn(
+        db,
+        'sync_results',
+        'timeline_offset_ms INTEGER NOT NULL DEFAULT 0',
+      );
     }
 
     await db.execute('''

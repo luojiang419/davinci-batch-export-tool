@@ -275,7 +275,7 @@ TimelineData _buildTimelineData({
     audioOriginalDurationMs: audioOriginalDurationMs,
     audioTrimStartMs: audioTrimStartMs,
     audioTrimEndMs: audioTrimEndMs,
-    offsetMs: audioTrimStartMs,
+    offsetMs: 0, // timeline offset, 0 for non-clamped case
     confidence: 0.92,
     status: '已通过',
     method: 'subtitleOnly',

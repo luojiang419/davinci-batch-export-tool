@@ -48,6 +48,7 @@ class SyncResult {
   final int anchorCount;
   final bool sourceClamped;
   final bool audioTooShort;
+  final int timelineOffsetMs;
   final SyncReviewStatus reviewStatus;
   final int? reviewedAtMs;
   final String? reviewNote;
@@ -72,6 +73,7 @@ class SyncResult {
     this.anchorCount = 0,
     this.sourceClamped = false,
     this.audioTooShort = false,
+    this.timelineOffsetMs = 0,
     this.reviewStatus = SyncReviewStatus.pending,
     this.reviewedAtMs,
     this.reviewNote,
@@ -101,6 +103,7 @@ class SyncResult {
     int? anchorCount,
     bool? sourceClamped,
     bool? audioTooShort,
+    int? timelineOffsetMs,
     SyncReviewStatus? reviewStatus,
     int? reviewedAtMs,
     bool clearReviewedAtMs = false,
@@ -126,6 +129,7 @@ class SyncResult {
       anchorCount: anchorCount ?? this.anchorCount,
       sourceClamped: sourceClamped ?? this.sourceClamped,
       audioTooShort: audioTooShort ?? this.audioTooShort,
+      timelineOffsetMs: timelineOffsetMs ?? this.timelineOffsetMs,
       reviewStatus: reviewStatus ?? this.reviewStatus,
       reviewedAtMs: clearReviewedAtMs
           ? null
@@ -161,6 +165,7 @@ class SyncResult {
       anchorCount: map['anchor_count'] as int? ?? 0,
       sourceClamped: (map['source_clamped'] as int? ?? 0) == 1,
       audioTooShort: (map['audio_too_short'] as int? ?? 0) == 1,
+      timelineOffsetMs: map['timeline_offset_ms'] as int? ?? 0,
       reviewStatus: _parseReviewStatus(map),
       reviewedAtMs: map['reviewed_at_ms'] as int?,
       reviewNote: map['review_note'] as String?,
@@ -187,6 +192,7 @@ class SyncResult {
     'anchor_count': anchorCount,
     'source_clamped': sourceClamped ? 1 : 0,
     'audio_too_short': audioTooShort ? 1 : 0,
+    'timeline_offset_ms': timelineOffsetMs,
     'needs_review': needsReview ? 1 : 0,
     'review_status': reviewStatus.name,
     'reviewed_at_ms': reviewedAtMs,

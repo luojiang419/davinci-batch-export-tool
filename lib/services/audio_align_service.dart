@@ -62,7 +62,7 @@ class AudioAlignService {
       audioOriginalDurationMs: audioFile?.durationMs ?? 0,
       audioTrimStartMs: audioTrimStartMs,
       audioTrimEndMs: audioTrimEndMs,
-      offsetMs: audioTrimStartMs,
+      offsetMs: syncResult.timelineOffsetMs,
       confidence: syncResult.confidence,
       status: syncResult.status.label,
       method: syncResult.method.name,

@@ -90,6 +90,7 @@ class ManualAnchorMatchPreview {
   final int? audioSourceOutMs;
   final bool sourceClamped;
   final bool audioTooShort;
+  final int timelineOffsetMs;
   final SyncStatus? status;
   final String notes;
   final String? error;
@@ -100,6 +101,7 @@ class ManualAnchorMatchPreview {
     required this.audioSourceOutMs,
     required this.sourceClamped,
     required this.audioTooShort,
+    this.timelineOffsetMs = 0,
     required this.status,
     required this.notes,
     this.error,
@@ -113,6 +115,7 @@ class ManualAnchorMatchPreview {
        audioSourceOutMs = null,
        sourceClamped = false,
        audioTooShort = false,
+       timelineOffsetMs = 0,
        status = null;
 
   bool get canMatch =>
@@ -435,11 +438,16 @@ class SubtitleMatchService {
       fallbackOffsetMs: 0,
     );
 
+    final sourceClamped = bundle.offsetMs < 0;
+    final timelineOffsetMs = sourceClamped ? -bundle.offsetMs : 0;
     final audioSourceInMs = math.max(bundle.offsetMs, 0);
-    final audioSourceOutMs = math.min(
+    var audioSourceOutMs = math.min(
       (audio.durationMs ?? 0),
       audioSourceInMs + (video.durationMs ?? 0),
     );
+    final audioTooShort =
+        (audio.durationMs ?? 0) > 0 &&
+        (audioSourceInMs + (video.durationMs ?? 0)) > (audio.durationMs ?? 0);
 
     final result = SyncResult(
       id: bundle.syncResultId,
@@ -452,9 +460,16 @@ class SubtitleMatchService {
       audioSourceInMs: audioSourceInMs,
       audioSourceOutMs: audioSourceOutMs,
       confidence: 1.0,
-      status: SyncStatus.autoAccepted,
+      status: audioTooShort
+          ? SyncStatus.audioTooShort
+          : sourceClamped
+          ? SyncStatus.sourceClamped
+          : SyncStatus.autoAccepted,
       method: SyncMethod.manual,
       anchorCount: bundle.anchors.length,
+      sourceClamped: sourceClamped,
+      audioTooShort: audioTooShort,
+      timelineOffsetMs: timelineOffsetMs,
       reviewStatus: SyncReviewStatus.accepted,
       reviewedAtMs: DateTime.now().millisecondsSinceEpoch,
       createdAt: DateTime.now(),
@@ -687,6 +702,7 @@ class SubtitleMatchService {
       anchorCount: 1,
       sourceClamped: preview.sourceClamped,
       audioTooShort: preview.audioTooShort,
+      timelineOffsetMs: preview.timelineOffsetMs,
       reviewStatus: SyncReviewStatus.accepted,
       reviewedAtMs: DateTime.now().millisecondsSinceEpoch,
       clearReviewNote: true,
@@ -758,6 +774,7 @@ class SubtitleMatchService {
     final audioLocalAnchorMs = audioGlobalStartMs - targetLayout.layoutStartMs;
     final unclampedSourceInMs = audioLocalAnchorMs - videoAnchorMs;
     final sourceClamped = unclampedSourceInMs < 0;
+    final timelineOffsetMs = sourceClamped ? -unclampedSourceInMs : 0;
     final audioSourceInMs = math.max(unclampedSourceInMs, 0);
     final videoDurationMs = math.max(videoFile.durationMs ?? 0, 0);
     final audioDurationMs = math.max(targetAudio.durationMs ?? 0, 0);
@@ -784,6 +801,7 @@ class SubtitleMatchService {
       audioSourceOutMs: audioSourceOutMs,
       sourceClamped: sourceClamped,
       audioTooShort: audioTooShort,
+      timelineOffsetMs: timelineOffsetMs,
       status: status,
       notes: _buildManualAnchorNotes(
         aggregateAudioClip: aggregateAudioClip,
@@ -912,9 +930,11 @@ class SubtitleMatchService {
     var audioSourceOutMs = audioSourceInMs + (video.durationMs ?? 0);
     var sourceClamped = false;
     var audioTooShort = false;
+    var timelineOffsetMs = 0;
     final audioDurationMs = audio.durationMs ?? 0;
     if (bundle.offsetMs < 0) {
       sourceClamped = true;
+      timelineOffsetMs = -bundle.offsetMs;
     }
     if (audioDurationMs > 0 && audioSourceOutMs > audioDurationMs) {
       audioTooShort = true;
@@ -959,6 +979,7 @@ class SubtitleMatchService {
       anchorCount: bundle.anchors.length,
       sourceClamped: sourceClamped,
       audioTooShort: audioTooShort,
+      timelineOffsetMs: timelineOffsetMs,
       reviewStatus: SyncReviewStatus.accepted,
       reviewedAtMs: DateTime.now().millisecondsSinceEpoch,
       notes: bundle.notes,
@@ -1248,8 +1269,10 @@ class SubtitleMatchService {
 
       bool sourceClamped = false;
       bool audioTooShort = false;
+      int timelineOffsetMs = 0;
       if (audioSourceInMs < 0) {
         sourceClamped = true;
+        timelineOffsetMs = -audioSourceInMs;
         audioSourceInMs = 0;
         audioSourceOutMs = video.durationMs;
       }
@@ -1302,6 +1325,7 @@ class SubtitleMatchService {
           anchorCount: anchorBundle.anchors.length,
           sourceClamped: sourceClamped,
           audioTooShort: audioTooShort,
+          timelineOffsetMs: timelineOffsetMs,
           reviewStatus: _initialReviewStatusForStatus(status),
           notes: anchorBundle.notes,
           createdAt: DateTime.now(),
