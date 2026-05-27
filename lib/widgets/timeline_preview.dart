@@ -115,12 +115,29 @@ class _TimelineRow extends StatelessWidget {
                 value: '${(timeline.confidence * 100).toStringAsFixed(0)}%',
               ),
               _Meta(label: '锚点', value: '${timeline.anchorCount}'),
+              _Meta(label: '片段', value: '${timeline.segmentCount}'),
               _Meta(label: '视频字幕', value: '${timeline.videoSubtitles.length}'),
               _Meta(label: '音频字幕', value: '${timeline.audioSubtitles.length}'),
               if (timeline.sourceClamped) _Meta(label: '越界', value: '已修正'),
               if (timeline.audioTooShort) _Meta(label: '音频', value: '过短'),
             ],
           ),
+          if (timeline.segments.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final segment in timeline.segments)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  'S${segment.segmentIndex + 1} ${segment.audioFileName} | '
+                  '${_formatMs(segment.videoStartMs)}-${_formatMs(segment.videoEndMs)} -> '
+                  '${_formatMs(segment.audioSourceInMs)}-${_formatMs(segment.audioSourceOutMs)}',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+          ],
           if (timeline.markerText.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(

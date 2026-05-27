@@ -32,6 +32,7 @@ class SubtitlePrepareService {
   SubtitlePrepareService._();
 
   static const _uuid = Uuid();
+  static const _generatedAggregateAudioPath = 'generated_audio_aggregate.srt';
 
   static String normalizeTextForMatching(String text) {
     final normalized = _normalizeFullWidth(text).toLowerCase();
@@ -80,10 +81,13 @@ class SubtitlePrepareService {
       projectId,
       mediaType: MediaType.video,
     );
-    final audioSubtitleFiles = await DatabaseService.getSubtitleFiles(
+    final allAudioSubtitleFiles = await DatabaseService.getSubtitleFiles(
       projectId,
       mediaType: MediaType.audio,
     );
+    final audioSubtitleFiles = allAudioSubtitleFiles
+        .where((file) => file.sourceType != SubtitleSourceType.generatedAggregate)
+        .toList();
 
     final preparedVideos = await _refreshLayouts(
       projectId,
@@ -115,6 +119,13 @@ class SubtitlePrepareService {
       subtitleFiles: audioSubtitleFiles,
       captureAudioClipsInto: allAudioLocalClips,
       onParsed: () => parsedFiles++,
+    );
+
+    await _ensureAggregateAudioTimeline(
+      projectId: projectId,
+      audioFiles: preparedAudios,
+      allAudioSubtitleFiles: allAudioSubtitleFiles,
+      localAudioClips: allAudioLocalClips,
     );
 
     final audioWindows = _buildWindows(
@@ -404,6 +415,107 @@ class SubtitlePrepareService {
     }
 
     return localClips;
+  }
+
+  static Future<List<SubtitleClip>> _ensureAggregateAudioTimeline({
+    required String projectId,
+    required List<MediaFile> audioFiles,
+    required List<SubtitleFile> allAudioSubtitleFiles,
+    required List<SubtitleClip> localAudioClips,
+  }) async {
+    final explicitAggregate = allAudioSubtitleFiles.firstWhere(
+      (file) => file.sourceType == SubtitleSourceType.aggregate,
+      orElse: () => SubtitleFile(
+        id: '',
+        projectId: projectId,
+        filePath: '',
+        mediaType: MediaType.audio,
+        createdAt: DateTime.now(),
+      ),
+    );
+    if (explicitAggregate.id.isNotEmpty) {
+      return DatabaseService.getGlobalSubtitleClips(explicitAggregate.id);
+    }
+    if (localAudioClips.isEmpty || audioFiles.isEmpty) {
+      return const [];
+    }
+
+    final generatedFile = allAudioSubtitleFiles.firstWhere(
+      (file) => file.sourceType == SubtitleSourceType.generatedAggregate,
+      orElse: () => SubtitleFile(
+        id: _uuid.v4(),
+        projectId: projectId,
+        filePath: _generatedAggregateAudioPath,
+        mediaType: MediaType.audio,
+        sourceType: SubtitleSourceType.generatedAggregate,
+        createdAt: DateTime.now(),
+      ),
+    );
+
+    if (!allAudioSubtitleFiles.any((file) => file.id == generatedFile.id)) {
+      await DatabaseService.insertSubtitleFile(generatedFile);
+    }
+
+    final generatedClips = _buildGeneratedAggregateClips(
+      subtitleFile: generatedFile,
+      audioFiles: audioFiles,
+      localAudioClips: localAudioClips,
+    );
+    await DatabaseService.updateSubtitleFile(
+      generatedFile.copyWith(
+        status: SubtitleFileStatus.split,
+        cueCount: generatedClips.length,
+      ),
+    );
+    if (generatedClips.isNotEmpty) {
+      await DatabaseService.insertSubtitleClips(generatedClips);
+    }
+    return generatedClips;
+  }
+
+  static List<SubtitleClip> _buildGeneratedAggregateClips({
+    required SubtitleFile subtitleFile,
+    required List<MediaFile> audioFiles,
+    required List<SubtitleClip> localAudioClips,
+  }) {
+    final audioMap = {for (final media in audioFiles) media.id: media};
+    final sortedClips = [...localAudioClips]
+      ..sort((left, right) {
+        final leftMedia = audioMap[left.mediaFileId];
+        final rightMedia = audioMap[right.mediaFileId];
+        final leftGlobal =
+            (leftMedia?.layoutStartMs ?? 0) + (left.localStartMs ?? left.startMs);
+        final rightGlobal =
+            (rightMedia?.layoutStartMs ?? 0) + (right.localStartMs ?? right.startMs);
+        final globalCompare = leftGlobal.compareTo(rightGlobal);
+        if (globalCompare != 0) return globalCompare;
+        return left.sortOrder.compareTo(right.sortOrder);
+      });
+
+    final generated = <SubtitleClip>[];
+    for (var index = 0; index < sortedClips.length; index++) {
+      final clip = sortedClips[index];
+      final media = audioMap[clip.mediaFileId];
+      if (media == null) continue;
+      final globalStart = media.layoutStartMs + (clip.localStartMs ?? clip.startMs);
+      final globalEnd = media.layoutStartMs + (clip.localEndMs ?? clip.endMs);
+      generated.add(
+        SubtitleClip(
+          id: _uuid.v4(),
+          subtitleFileId: subtitleFile.id,
+          mediaFileId: null,
+          sourceKind: 'aggregate',
+          startMs: globalStart,
+          endMs: globalEnd,
+          globalStartMs: globalStart,
+          globalEndMs: globalEnd,
+          text: clip.text,
+          normalizedText: clip.normalizedText,
+          sortOrder: index,
+        ),
+      );
+    }
+    return generated;
   }
 
   static List<SubtitleClip> _mapPerClipSubtitleFile({

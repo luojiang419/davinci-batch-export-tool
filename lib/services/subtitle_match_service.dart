@@ -12,6 +12,7 @@ import '../models/media_file.dart';
 import '../models/source_layout_item.dart';
 import '../models/subtitle_clip.dart';
 import '../models/subtitle_window.dart';
+import '../models/sync_audio_segment.dart';
 import '../models/sync_result.dart';
 import '../models/sync_review_detail.dart';
 import 'database_service.dart';
@@ -324,6 +325,10 @@ class SubtitleMatchService {
         .cast<Map<String, dynamic>>()
         .map(SyncResult.fromMap)
         .toList();
+    final segments = (result['sync_audio_segments'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .map(SyncAudioSegment.fromMap)
+        .toList();
     final anchors = (result['anchor_pairs'] as List<dynamic>)
         .cast<Map<String, dynamic>>()
         .map(AnchorPair.fromMap)
@@ -331,6 +336,7 @@ class SubtitleMatchService {
 
     await DatabaseService.replaceMatchCandidates(projectId, candidates);
     await DatabaseService.replaceSyncResults(projectId, syncResults);
+    await DatabaseService.replaceSyncAudioSegments(projectId, segments);
     if (anchors.isNotEmpty) {
       await DatabaseService.insertAnchorPairs(anchors);
     }
@@ -470,16 +476,43 @@ class SubtitleMatchService {
       sourceClamped: sourceClamped,
       audioTooShort: audioTooShort,
       timelineOffsetMs: timelineOffsetMs,
+      coarseOffsetMs: bundle.offsetMs,
+      finalOffsetMs: bundle.offsetMs,
+      offsetMadMs: 0,
+      alignmentCoverage: video.durationMs == null || video.durationMs == 0
+          ? 0.0
+          : ((audioSourceOutMs - audioSourceInMs) / (video.durationMs ?? 1))
+                .clamp(0.0, 1.0),
+      switchCount: 0,
+      sourceClampedReason: sourceClamped ? '手动匹配起点越界' : null,
       reviewStatus: SyncReviewStatus.accepted,
       reviewedAtMs: DateTime.now().millisecondsSinceEpoch,
       createdAt: DateTime.now(),
     );
 
     final existing = await DatabaseService.getSyncResults(projectId);
-    final retained =
-        existing.where((item) => item.videoFileId != videoFileId).toList()
-          ..add(result);
-    await DatabaseService.replaceSyncResults(projectId, retained);
+    final conflict = existing.where((item) => item.videoFileId == videoFileId);
+    for (final item in conflict) {
+      await DatabaseService.deleteSyncResultById(item.id);
+    }
+    await DatabaseService.putSyncResult(result);
+    await DatabaseService.replaceSyncAudioSegmentsForResult(
+      result.id,
+      [
+        _buildSingleSegment(
+          syncResultId: result.id,
+          audioFileId: audioFileId,
+          videoStartMs: math.max(0, timelineOffsetMs),
+          videoEndMs: video.durationMs ?? 0,
+          audioSourceInMs: audioSourceInMs,
+          audioSourceOutMs: audioSourceOutMs,
+          offsetMs: bundle.offsetMs,
+          anchorCount: bundle.anchors.length,
+          confidence: 1.0,
+          notes: 'manual-create',
+        ),
+      ],
+    );
     if (bundle.anchors.isNotEmpty) {
       await DatabaseService.insertAnchorPairs(bundle.anchors);
     }
@@ -703,12 +736,41 @@ class SubtitleMatchService {
       sourceClamped: preview.sourceClamped,
       audioTooShort: preview.audioTooShort,
       timelineOffsetMs: preview.timelineOffsetMs,
+      coarseOffsetMs: audioAnchorMs - videoAnchorMs,
+      finalOffsetMs: audioAnchorMs - videoAnchorMs,
+      offsetMadMs: 0,
+      alignmentCoverage:
+          existing.videoDurationMs <= 0
+              ? 0.0
+              : (((preview.audioSourceOutMs ?? 0) -
+                              (preview.audioSourceInMs ?? 0)) /
+                          existing.videoDurationMs)
+                      .clamp(0.0, 1.0),
+      switchCount: 0,
+      sourceClampedReason: preview.sourceClamped ? '手动锚点起点越界' : null,
       reviewStatus: SyncReviewStatus.accepted,
       reviewedAtMs: DateTime.now().millisecondsSinceEpoch,
       clearReviewNote: true,
       notes: preview.notes,
     );
     await DatabaseService.updateSyncResult(updated);
+    await DatabaseService.replaceSyncAudioSegmentsForResult(
+      syncResultId,
+      [
+        _buildSingleSegment(
+          syncResultId: syncResultId,
+          audioFileId: preview.targetAudioFile!.id,
+          videoStartMs: math.max(0, preview.timelineOffsetMs),
+          videoEndMs: existing.videoDurationMs,
+          audioSourceInMs: preview.audioSourceInMs ?? 0,
+          audioSourceOutMs: preview.audioSourceOutMs ?? 0,
+          offsetMs: audioAnchorMs - videoAnchorMs,
+          anchorCount: 1,
+          confidence: 1.0,
+          notes: preview.notes,
+        ),
+      ],
+    );
     await DatabaseService.deleteAnchorPairs(syncResultId);
     await DatabaseService.insertAnchorPairs([
       AnchorPair(
@@ -980,11 +1042,38 @@ class SubtitleMatchService {
       sourceClamped: sourceClamped,
       audioTooShort: audioTooShort,
       timelineOffsetMs: timelineOffsetMs,
+      coarseOffsetMs: candidate?.fallbackOffsetMs ?? existing.coarseOffsetMs,
+      finalOffsetMs: bundle.offsetMs,
+      offsetMadMs: 0,
+      alignmentCoverage:
+          existing.videoDurationMs <= 0
+              ? 0.0
+              : ((audioSourceOutMs - audioSourceInMs) / existing.videoDurationMs)
+                    .clamp(0.0, 1.0),
+      switchCount: 0,
+      sourceClampedReason: sourceClamped ? '手动改配起点越界' : null,
       reviewStatus: SyncReviewStatus.accepted,
       reviewedAtMs: DateTime.now().millisecondsSinceEpoch,
       notes: bundle.notes,
     );
     await DatabaseService.updateSyncResult(updated);
+    await DatabaseService.replaceSyncAudioSegmentsForResult(
+      syncResultId,
+      [
+        _buildSingleSegment(
+          syncResultId: syncResultId,
+          audioFileId: audio.id,
+          videoStartMs: math.max(0, timelineOffsetMs),
+          videoEndMs: existing.videoDurationMs,
+          audioSourceInMs: audioSourceInMs,
+          audioSourceOutMs: audioSourceOutMs,
+          offsetMs: bundle.offsetMs,
+          anchorCount: bundle.anchors.length,
+          confidence: confidence,
+          notes: bundle.notes,
+        ),
+      ],
+    );
     await DatabaseService.deleteAnchorPairs(syncResultId);
     if (bundle.anchors.isNotEmpty) {
       await DatabaseService.insertAnchorPairs(bundle.anchors);
@@ -996,9 +1085,7 @@ class SubtitleMatchService {
     String syncResultId,
     String projectId,
   ) async {
-    final existing = await DatabaseService.getSyncResults(projectId);
-    final retained = existing.where((item) => item.id != syncResultId).toList();
-    await DatabaseService.replaceSyncResults(projectId, retained);
+    await DatabaseService.deleteSyncResultById(syncResultId);
   }
 
   static Future<Map<String, dynamic>> _buildWorkerPayload(
@@ -1012,32 +1099,28 @@ class SubtitleMatchService {
       projectId,
       type: MediaType.audio,
     );
-    final audioWindows = await DatabaseService.getSubtitleWindows(
-      projectId,
-      mediaType: MediaType.audio,
-    );
-
     final videoClipsById = <String, List<Map<String, dynamic>>>{};
     for (final video in videos) {
       videoClipsById[video.id] = (await DatabaseService.getSubtitleClips(
         video.id,
       )).map((clip) => clip.toMap()).toList();
     }
-
-    final audioClipsById = <String, List<Map<String, dynamic>>>{};
-    for (final audio in audios) {
-      audioClipsById[audio.id] = (await DatabaseService.getSubtitleClips(
-        audio.id,
-      )).map((clip) => clip.toMap()).toList();
-    }
+    final aggregateAudioSubtitleFile =
+        await DatabaseService.getPreferredAggregateAudioSubtitleFile(projectId);
+    final aggregateAudioClips = aggregateAudioSubtitleFile == null
+        ? const <SubtitleClip>[]
+        : await DatabaseService.getGlobalSubtitleClips(
+            aggregateAudioSubtitleFile.id,
+          );
 
     return {
       'project_id': projectId,
       'videos': videos.map((video) => video.toMap()).toList(),
       'audios': audios.map((audio) => audio.toMap()).toList(),
-      'audio_windows': audioWindows.map((window) => window.toMap()).toList(),
+      'aggregate_audio_clips': aggregateAudioClips
+          .map((clip) => clip.toMap())
+          .toList(),
       'video_clips_by_id': videoClipsById,
-      'audio_clips_by_id': audioClipsById,
     };
   }
 
@@ -1130,9 +1213,10 @@ class SubtitleMatchService {
         .cast<Map<String, dynamic>>()
         .map(_WorkerMedia.fromMap)
         .toList();
-    final audioWindows = (payload['audio_windows'] as List<dynamic>)
+    final aggregateAudioClips =
+        (payload['aggregate_audio_clips'] as List<dynamic>)
         .cast<Map<String, dynamic>>()
-        .map(_WorkerWindow.fromMap)
+        .map(_WorkerClip.fromMap)
         .toList();
     final videoClipsById = (payload['video_clips_by_id'] as Map).map(
       (key, value) => MapEntry(
@@ -1143,28 +1227,19 @@ class SubtitleMatchService {
             .toList(),
       ),
     );
-    final audioClipsById = (payload['audio_clips_by_id'] as Map).map(
-      (key, value) => MapEntry(
-        key as String,
-        (value as List<dynamic>)
-            .cast<Map<String, dynamic>>()
-            .map(_WorkerClip.fromMap)
-            .toList(),
-      ),
-    );
 
     final audioMap = {for (final audio in audios) audio.id: audio};
-    final audioWindowsBySize = <int, List<_WorkerWindow>>{};
-    for (final window in audioWindows) {
-      audioWindowsBySize.putIfAbsent(window.windowSize, () => []).add(window);
-    }
+    final aggregateAudioWindows = _buildAggregateAudioWindows(
+      projectId,
+      aggregateAudioClips,
+    );
 
     final candidates = <Map<String, dynamic>>[];
     final syncResults = <Map<String, dynamic>>[];
+    final segments = <Map<String, dynamic>>[];
     final anchors = <Map<String, dynamic>>[];
 
-    String? previousAudioId;
-    int? previousAudioSourceIn;
+    int? previousFinalOffsetMs;
 
     for (var index = 0; index < videos.length; index++) {
       final video = videos[index];
@@ -1201,26 +1276,16 @@ class SubtitleMatchService {
       }
 
       final videoWindows = _buildVideoWindows(video, projectId, videoClips);
-      final groupedCandidates = _scoreCandidates(
+      final candidate = _scoreAggregateCandidate(
         projectId: projectId,
         video: video,
-        audioMap: audioMap,
-        audioWindowsBySize: audioWindowsBySize,
+        aggregateAudioWindows: aggregateAudioWindows,
         videoWindows: videoWindows,
-        previousAudioId: previousAudioId,
-        previousAudioSourceIn: previousAudioSourceIn,
-      );
-      final orderedCandidates = groupedCandidates.values.toList()
-        ..sort((a, b) => b.totalScore.compareTo(a.totalScore));
-      candidates.addAll(
-        orderedCandidates
-            .take(AppConstants.topKCandidates)
-            .map((candidate) => candidate.toMap()),
+        previousFinalOffsetMs: previousFinalOffsetMs,
       );
 
-      if (orderedCandidates.isEmpty ||
-          orderedCandidates.first.totalScore <
-              AppConstants.matchConfidenceLow) {
+      if (candidate == null ||
+          candidate.totalScore < AppConstants.matchConfidenceLow) {
         syncResults.add(
           SyncResult(
             id: _uuid.v4(),
@@ -1230,9 +1295,7 @@ class SubtitleMatchService {
             videoDurationMs: video.durationMs,
             timelineStartMs: video.layoutStartMs,
             timelineEndMs: video.layoutEndMs,
-            confidence: orderedCandidates.isEmpty
-                ? 0.0
-                : orderedCandidates.first.totalScore,
+            confidence: candidate?.totalScore ?? 0.0,
             status: SyncStatus.noMatch,
             method: SyncMethod.subtitleOnly,
             reviewStatus: SyncReviewStatus.pending,
@@ -1252,96 +1315,889 @@ class SubtitleMatchService {
         'progress': videos.isEmpty ? 0.0 : ((index + 1) / videos.length) * 0.9,
       });
 
-      final best = orderedCandidates.first;
-      final bestAudio = audioMap[best.audioFileId];
-      final bestAudioClips = bestAudio == null
-          ? const <_WorkerClip>[]
-          : (audioClipsById[best.audioFileId] ?? const <_WorkerClip>[]);
-
-      final anchorBundle = _buildAnchors(
-        syncResultId: _uuid.v4(),
+      final syncResultId = _uuid.v4();
+      final alignment = _alignVideoToAggregateAudio(
+        syncResultId: syncResultId,
+        video: video,
         videoClips: videoClips,
-        audioClips: bestAudioClips,
-        fallbackOffsetMs: best.fallbackOffsetMs,
+        aggregateAudioClips: aggregateAudioClips,
+        audios: audios,
+        coarseOffsetMs: candidate.fallbackOffsetMs,
       );
-      var audioSourceInMs = anchorBundle.offsetMs;
-      var audioSourceOutMs = audioSourceInMs + video.durationMs;
+      final primaryAudio = alignment.primaryAudioFileId == null
+          ? null
+          : audioMap[alignment.primaryAudioFileId!];
 
-      bool sourceClamped = false;
-      bool audioTooShort = false;
-      int timelineOffsetMs = 0;
-      if (audioSourceInMs < 0) {
-        sourceClamped = true;
-        timelineOffsetMs = -audioSourceInMs;
-        audioSourceInMs = 0;
-        audioSourceOutMs = video.durationMs;
-      }
-      final audioDurationMs = bestAudio?.durationMs ?? 0;
-      if (audioDurationMs > 0 && audioSourceOutMs > audioDurationMs) {
-        audioTooShort = true;
-        audioSourceOutMs = audioDurationMs;
-        if (audioSourceOutMs < audioSourceInMs) {
-          audioSourceOutMs = audioSourceInMs;
-        }
-      }
+      candidates.add(
+        MatchCandidate(
+          id: _uuid.v4(),
+          projectId: projectId,
+          videoFileId: video.id,
+          audioFileId:
+              alignment.primaryAudioFileId ?? (audios.isEmpty ? '' : audios.first.id),
+          videoWindowId: candidate.bestVideoWindowId,
+          audioWindowId: candidate.bestAudioWindowId,
+          textScore: candidate.textScore,
+          contextScore: candidate.contextScore,
+          anchorScore: candidate.anchorScore,
+          uniquenessScore: candidate.uniquenessScore,
+          metadataScore: candidate.metadataScore,
+          neighborScore: candidate.neighborScore,
+          totalScore: candidate.totalScore,
+          fallbackOffsetMs: candidate.fallbackOffsetMs,
+          createdAt: DateTime.now(),
+        ).toMap(),
+      );
 
-      var confidence = best.totalScore;
+      var confidence = candidate.totalScore;
       if (videoClips.length < 2) {
         confidence = math.min(
           confidence,
           AppConstants.matchConfidenceMedium + 0.05,
         );
       }
-      if (sourceClamped || audioTooShort) {
+      if (alignment.sourceClamped || alignment.audioTooShort) {
         confidence *= 0.88;
       }
-      if (anchorBundle.anchors.length <= 1) {
+      if (alignment.anchors.length <= 1) {
         confidence *= 0.92;
       }
       confidence = confidence.clamp(0.0, 1.0);
 
       final status = _buildStatus(
         confidence: confidence,
-        sourceClamped: sourceClamped,
-        audioTooShort: audioTooShort,
+        sourceClamped: alignment.sourceClamped,
+        audioTooShort: alignment.audioTooShort,
         hasSubtitle: true,
-        hasAudio: bestAudio != null,
+        hasAudio: primaryAudio != null,
       );
 
       syncResults.add(
         SyncResult(
-          id: anchorBundle.syncResultId,
+          id: syncResultId,
           projectId: projectId,
           videoFileId: video.id,
-          audioFileId: best.audioFileId,
+          audioFileId: alignment.primaryAudioFileId,
           videoDurationMs: video.durationMs,
           timelineStartMs: video.layoutStartMs,
           timelineEndMs: video.layoutEndMs,
-          audioSourceInMs: audioSourceInMs,
-          audioSourceOutMs: audioSourceOutMs,
+          audioSourceInMs: alignment.summaryAudioSourceInMs,
+          audioSourceOutMs: alignment.summaryAudioSourceOutMs,
           confidence: confidence,
           status: status,
           method: SyncMethod.subtitleOnly,
-          anchorCount: anchorBundle.anchors.length,
-          sourceClamped: sourceClamped,
-          audioTooShort: audioTooShort,
-          timelineOffsetMs: timelineOffsetMs,
+          anchorCount: alignment.anchors.length,
+          sourceClamped: alignment.sourceClamped,
+          audioTooShort: alignment.audioTooShort,
+          timelineOffsetMs: alignment.timelineOffsetMs,
+          coarseOffsetMs: candidate.fallbackOffsetMs,
+          finalOffsetMs: alignment.finalOffsetMs,
+          offsetMadMs: alignment.offsetMadMs,
+          alignmentCoverage: alignment.alignmentCoverage,
+          switchCount: alignment.switchCount,
+          sourceClampedReason: alignment.sourceClampedReason,
           reviewStatus: _initialReviewStatusForStatus(status),
-          notes: anchorBundle.notes,
+          notes: alignment.notes,
           createdAt: DateTime.now(),
         ).toMap(),
       );
-      anchors.addAll(anchorBundle.anchors.map((anchor) => anchor.toMap()));
+      segments.addAll(alignment.segments.map((segment) => segment.toMap()));
+      anchors.addAll(alignment.anchors.map((anchor) => anchor.toMap()));
 
-      previousAudioId = best.audioFileId;
-      previousAudioSourceIn = audioSourceInMs;
+      previousFinalOffsetMs = alignment.finalOffsetMs;
     }
 
     return {
       'match_candidates': candidates,
       'sync_results': syncResults,
+      'sync_audio_segments': segments,
       'anchor_pairs': anchors,
     };
+  }
+
+  static List<_WorkerWindow> _buildAggregateAudioWindows(
+    String projectId,
+    List<_WorkerClip> aggregateAudioClips,
+  ) {
+    final clips = [...aggregateAudioClips]
+      ..sort((left, right) => left.startMs.compareTo(right.startMs));
+    if (clips.isEmpty) return const [];
+
+    final provisional = <_WorkerWindow>[];
+    final frequency = <String, int>{};
+
+    for (final windowSize in AppConstants.subtitleWindowSizes) {
+      if (clips.length < windowSize) continue;
+      for (var index = 0; index <= clips.length - windowSize; index++) {
+        final slice = clips.sublist(index, index + windowSize);
+        final normalizedText = slice
+            .map((clip) => clip.normalizedText)
+            .where((text) => text.isNotEmpty)
+            .join(' ');
+        if (normalizedText.isEmpty) continue;
+        frequency.update(normalizedText, (value) => value + 1, ifAbsent: () => 1);
+        provisional.add(
+          _WorkerWindow(
+            id: 'agg_${projectId}_${windowSize}_$index',
+            mediaFileId: '__aggregate__',
+            windowSize: windowSize,
+            startMs: slice.first.startMs,
+            endMs: slice.last.endMs,
+            uniquenessWeight: _lowValueMultiplier(normalizedText),
+            preparedText: _PreparedText.fromText(normalizedText),
+          ),
+        );
+      }
+    }
+
+    return provisional
+        .map((window) {
+          final count = frequency[window.preparedText.text] ?? 1;
+          return _WorkerWindow(
+            id: window.id,
+            mediaFileId: window.mediaFileId,
+            windowSize: window.windowSize,
+            startMs: window.startMs,
+            endMs: window.endMs,
+            uniquenessWeight: (window.uniquenessWeight / count).clamp(0.05, 1.0),
+            preparedText: window.preparedText,
+          );
+        })
+        .toList();
+  }
+
+  static _AggregateCandidate? _scoreAggregateCandidate({
+    required String projectId,
+    required _WorkerMedia video,
+    required List<_WorkerWindow> aggregateAudioWindows,
+    required List<_WorkerWindow> videoWindows,
+    required int? previousFinalOffsetMs,
+  }) {
+    if (aggregateAudioWindows.isEmpty || videoWindows.isEmpty) {
+      return null;
+    }
+
+    final limiter = LimitedCandidateBucket<_CandidateHit>(
+      perWindowLimit: AppConstants.matchMaxHitsPerWindowPerAudio,
+      totalLimit: AppConstants.matchMaxHitsPerAudio,
+    );
+
+    for (final videoWindow in videoWindows) {
+      final comparable = aggregateAudioWindows.where(
+        (audioWindow) => audioWindow.windowSize == videoWindow.windowSize,
+      );
+      for (final audioWindow in comparable) {
+        final prefilter = _evaluateCheapPrefilterPrepared(
+          videoWindow.preparedText,
+          audioWindow.preparedText,
+        );
+        if (prefilter == null) continue;
+        final textScore = _textSimilarityPrepared(
+          videoWindow.preparedText,
+          audioWindow.preparedText,
+          baseDice: prefilter.diceScore,
+        );
+        if (textScore < 0.35) continue;
+        limiter.add(
+          windowKey: videoWindow.id,
+          value: _CandidateHit(
+            videoWindow: videoWindow,
+            audioWindow: audioWindow,
+            textScore: textScore,
+          ),
+          score: textScore * audioWindow.uniquenessWeight.clamp(0.1, 1.0),
+        );
+      }
+    }
+
+    final entries = limiter.entriesSortedByScoreDesc;
+    if (entries.isEmpty) return null;
+    final cluster = _selectDominantOffsetCluster(entries);
+    if (cluster == null) return null;
+
+    final bestHit = cluster.bestEntry.value;
+    final contextScore =
+        (cluster.entries.length / math.max(videoWindows.length, 1)).clamp(0.0, 1.0);
+    final anchorScore = _anchorStabilityScore(cluster.offsets);
+    final uniquenessScore = cluster.entries.fold<double>(
+          0.0,
+          (sum, entry) => sum + entry.value.audioWindow.uniquenessWeight,
+        ) /
+        cluster.entries.length;
+    final neighborScore = previousFinalOffsetMs == null
+        ? 0.5
+        : (1.0 -
+                  ((cluster.weightedMedianOffsetMs - previousFinalOffsetMs).abs() /
+                      5000))
+              .clamp(0.0, 1.0);
+    final metadataScore = 0.5;
+    final totalScore =
+        (bestHit.textScore * 0.45 +
+                contextScore * 0.20 +
+                anchorScore * 0.20 +
+                uniquenessScore * 0.10 +
+                neighborScore * 0.05)
+            .clamp(0.0, 1.0);
+
+    return _AggregateCandidate(
+      projectId: projectId,
+      videoFileId: video.id,
+      bestVideoWindowId: bestHit.videoWindow.id,
+      bestAudioWindowId: bestHit.audioWindow.id,
+      textScore: bestHit.textScore,
+      contextScore: contextScore,
+      anchorScore: anchorScore,
+      uniquenessScore: uniquenessScore,
+      metadataScore: metadataScore,
+      neighborScore: neighborScore,
+      totalScore: totalScore,
+      fallbackOffsetMs: cluster.weightedMedianOffsetMs,
+    );
+  }
+
+  static _AggregateAlignmentResult _alignVideoToAggregateAudio({
+    required String syncResultId,
+    required _WorkerMedia video,
+    required List<_WorkerClip> videoClips,
+    required List<_WorkerClip> aggregateAudioClips,
+    required List<_WorkerMedia> audios,
+    required int coarseOffsetMs,
+  }) {
+    final sortedAggregate = [...aggregateAudioClips]
+      ..sort((left, right) => left.startMs.compareTo(right.startMs));
+    if (sortedAggregate.isEmpty || audios.isEmpty) {
+      return const _AggregateAlignmentResult.empty();
+    }
+
+    final matchedAnchors = _selectMonotonicAggregateAnchors(
+      videoClips: videoClips,
+      aggregateAudioClips: sortedAggregate,
+      coarseOffsetMs: coarseOffsetMs,
+      audios: audios,
+    );
+
+    if (matchedAnchors.isEmpty) {
+      return _buildFallbackAlignment(
+        syncResultId: syncResultId,
+        video: video,
+        audios: audios,
+        coarseOffsetMs: coarseOffsetMs,
+      );
+    }
+
+    final groups = _groupAnchorsBySegment(matchedAnchors);
+    final segmentDrafts = <_SegmentDraft>[];
+    int? previousBoundary;
+    for (var index = 0; index < groups.length; index++) {
+      final group = groups[index];
+      final nextGroup = index + 1 < groups.length ? groups[index + 1] : null;
+      final startMs = previousBoundary ?? 0;
+      final endMs = nextGroup == null
+          ? video.durationMs
+          : _resolveSegmentBoundary(group, nextGroup, audios, video.durationMs);
+      previousBoundary = endMs;
+      segmentDrafts.addAll(
+        _segmentizeRangeByOffset(
+          videoStartMs: startMs,
+          videoEndMs: endMs,
+          offsetMs: group.medianOffsetMs,
+          audios: audios,
+          anchorCount: group.anchors.length,
+          confidence: group.averageSimilarity,
+          notes: 'group=${index + 1}/${groups.length}',
+        ),
+      );
+    }
+
+    final mergedDrafts = _mergeSegmentDrafts(segmentDrafts);
+    if (mergedDrafts.isEmpty) {
+      return _buildFallbackAlignment(
+        syncResultId: syncResultId,
+        video: video,
+        audios: audios,
+        coarseOffsetMs: coarseOffsetMs,
+      );
+    }
+
+    final segments = <SyncAudioSegment>[];
+    final clampReasons = <String>[];
+    var sourceClamped = false;
+    var audioTooShort = false;
+    var coveredVideoMs = 0;
+
+    for (var index = 0; index < mergedDrafts.length; index++) {
+      final draft = mergedDrafts[index];
+      coveredVideoMs += math.max(0, draft.videoEndMs - draft.videoStartMs);
+      if (draft.sourceClamped) {
+        sourceClamped = true;
+        if (draft.sourceClampedReason != null &&
+            draft.sourceClampedReason!.isNotEmpty) {
+          clampReasons.add(draft.sourceClampedReason!);
+        }
+      }
+      if (draft.audioTooShort) {
+        audioTooShort = true;
+      }
+      segments.add(
+        SyncAudioSegment(
+          id: _uuid.v4(),
+          syncResultId: syncResultId,
+          segmentIndex: index,
+          audioFileId: draft.audioFileId,
+          videoStartMs: draft.videoStartMs,
+          videoEndMs: draft.videoEndMs,
+          audioSourceInMs: draft.audioSourceInMs,
+          audioSourceOutMs: draft.audioSourceOutMs,
+          offsetMs: draft.offsetMs,
+          anchorCount: draft.anchorCount,
+          confidence: draft.confidence,
+          notes: draft.notes,
+          createdAt: DateTime.now(),
+        ),
+      );
+    }
+
+    final finalOffsetMs = _medianInt(matchedAnchors.map((item) => item.offsetMs).toList());
+    final offsetMadMs = _medianAbsoluteDeviationMs(
+      matchedAnchors.map((item) => item.offsetMs).toList(),
+      finalOffsetMs,
+    );
+    final alignmentCoverage = video.durationMs <= 0
+        ? 0.0
+        : (coveredVideoMs / video.durationMs).clamp(0.0, 1.0);
+    if (alignmentCoverage < 0.999) {
+      audioTooShort = true;
+    }
+
+    final anchorPairs = matchedAnchors
+        .map(
+          (anchor) => AnchorPair(
+            id: _uuid.v4(),
+            syncResultId: syncResultId,
+            videoClipId: anchor.videoClip.id,
+            audioClipId: anchor.audioClip.id,
+            videoTimeMs: anchor.videoClip.localStartMs,
+            audioTimeMs: anchor.audioClip.startMs,
+            offsetMs: anchor.offsetMs,
+            similarity: anchor.score,
+          ),
+        )
+        .toList();
+    final dominantSegment = [...segments]
+      ..sort((left, right) => right.videoDurationMs.compareTo(left.videoDurationMs));
+    final primarySegment = dominantSegment.isEmpty ? null : dominantSegment.first;
+    final switchCount = math.max(0, segments.length - 1);
+    final timelineOffsetMs = segments.isEmpty ? 0 : segments.first.videoStartMs;
+
+    return _AggregateAlignmentResult(
+      segments: segments,
+      anchors: anchorPairs,
+      primaryAudioFileId: primarySegment?.audioFileId,
+      summaryAudioSourceInMs: segments.isEmpty ? null : segments.first.audioSourceInMs,
+      summaryAudioSourceOutMs: segments.isEmpty ? null : segments.first.audioSourceOutMs,
+      sourceClamped: sourceClamped,
+      audioTooShort: audioTooShort,
+      timelineOffsetMs: timelineOffsetMs,
+      finalOffsetMs: finalOffsetMs,
+      offsetMadMs: offsetMadMs,
+      alignmentCoverage: alignmentCoverage,
+      switchCount: switchCount,
+      sourceClampedReason:
+          clampReasons.isEmpty ? null : clampReasons.toSet().join(' | '),
+      notes:
+          'anchors=${matchedAnchors.length}, segments=${segments.length}, coverage=${alignmentCoverage.toStringAsFixed(3)}',
+    );
+  }
+
+  static List<_MatchedAggregateAnchor> _selectMonotonicAggregateAnchors({
+    required List<_WorkerClip> videoClips,
+    required List<_WorkerClip> aggregateAudioClips,
+    required int coarseOffsetMs,
+    required List<_WorkerMedia> audios,
+  }) {
+    final matched = <_MatchedAggregateAnchor>[];
+    var minAudioIndex = 0;
+    var rollingOffset = coarseOffsetMs.toDouble();
+
+    for (final videoClip in videoClips) {
+      final targetMs = videoClip.localStartMs + coarseOffsetMs;
+      final localCandidates = <_AggregateAnchorCandidate>[];
+
+      for (var audioIndex = minAudioIndex;
+          audioIndex < aggregateAudioClips.length;
+          audioIndex++) {
+        final audioClip = aggregateAudioClips[audioIndex];
+        if ((audioClip.startMs - targetMs).abs() >
+            AppConstants.anchorSearchRadiusMs) {
+          continue;
+        }
+        final prefilter = _evaluateCheapPrefilterPrepared(
+          videoClip.preparedText,
+          audioClip.preparedText,
+        );
+        if (prefilter == null) continue;
+        final textScore = _textSimilarityPrepared(
+          videoClip.preparedText,
+          audioClip.preparedText,
+          baseDice: prefilter.diceScore,
+        );
+        if (textScore < 0.42) continue;
+        final offsetMs = audioClip.startMs - videoClip.localStartMs;
+        final offsetScore =
+            (1.0 - ((offsetMs - rollingOffset).abs() / 6000)).clamp(0.0, 1.0);
+        final lowValueWeight = math.min(
+          _lowValueMultiplier(videoClip.normalizedText),
+          _lowValueMultiplier(audioClip.normalizedText),
+        );
+        final totalScore =
+            ((textScore * 0.75) + (offsetScore * 0.25)) * lowValueWeight;
+        if (totalScore <= 0) continue;
+        localCandidates.add(
+          _AggregateAnchorCandidate(
+            audioIndex: audioIndex,
+            videoClip: videoClip,
+            audioClip: audioClip,
+            offsetMs: offsetMs,
+            score: totalScore,
+          ),
+        );
+      }
+
+      if (localCandidates.isEmpty) {
+        continue;
+      }
+      localCandidates.sort((left, right) => right.score.compareTo(left.score));
+      final best = localCandidates.first;
+      final matchedAudio = _resolveAudioForGlobalMs(audios, best.audioClip.startMs);
+      if (matchedAudio == null) continue;
+      matched.add(
+        _MatchedAggregateAnchor(
+          audioIndex: best.audioIndex,
+          videoClip: best.videoClip,
+          audioClip: best.audioClip,
+          audioFileId: matchedAudio.id,
+          offsetMs: best.offsetMs,
+          score: best.score,
+        ),
+      );
+      minAudioIndex = best.audioIndex + 1;
+      rollingOffset = matched.length == 1
+          ? best.offsetMs.toDouble()
+          : (rollingOffset * 0.6) + (best.offsetMs * 0.4);
+    }
+
+    return matched;
+  }
+
+  static List<_AnchorGroup> _groupAnchorsBySegment(
+    List<_MatchedAggregateAnchor> anchors,
+  ) {
+    if (anchors.isEmpty) return const [];
+
+    final groups = <_AnchorGroup>[];
+    var current = <_MatchedAggregateAnchor>[anchors.first];
+
+    for (final anchor in anchors.skip(1)) {
+      final medianOffset = _medianInt(current.map((item) => item.offsetMs).toList());
+      final sameAudio = current.last.audioFileId == anchor.audioFileId;
+      final stableOffset =
+          (anchor.offsetMs - medianOffset).abs() <=
+          AppConstants.offsetJumpSplitThresholdMs;
+      if (sameAudio && stableOffset) {
+        current.add(anchor);
+        continue;
+      }
+      groups.add(_AnchorGroup(current));
+      current = [anchor];
+    }
+    groups.add(_AnchorGroup(current));
+    return _smoothAnchorGroups(groups);
+  }
+
+  static List<_AnchorGroup> _smoothAnchorGroups(List<_AnchorGroup> groups) {
+    if (groups.length <= 1) return groups;
+    final merged = <_AnchorGroup>[groups.first];
+    for (final group in groups.skip(1)) {
+      final previous = merged.last;
+      final sameAudio = previous.audioFileId == group.audioFileId;
+      final weakBoundary =
+          sameAudio &&
+          (previous.anchors.length <= 2 ||
+              group.anchors.length <= 2 ||
+              (previous.medianOffsetMs - group.medianOffsetMs).abs() <=
+                  AppConstants.offsetClusterToleranceMs);
+      if (!weakBoundary) {
+        merged.add(group);
+        continue;
+      }
+      merged[merged.length - 1] = _AnchorGroup([
+        ...previous.anchors,
+        ...group.anchors,
+      ]);
+    }
+    return merged;
+  }
+
+  static int _resolveSegmentBoundary(
+    _AnchorGroup current,
+    _AnchorGroup next,
+    List<_WorkerMedia> audios,
+    int videoDurationMs,
+  ) {
+    final minBoundary = current.lastVideoTimeMs;
+    final maxBoundary = next.firstVideoTimeMs;
+    if (current.audioFileId == next.audioFileId) {
+      return ((minBoundary + maxBoundary) / 2).round();
+    }
+    final nextAudio = audios.firstWhere(
+      (audio) => audio.id == next.audioFileId,
+      orElse: () => audios.first,
+    );
+    final layoutBoundary = nextAudio.layoutStartMs;
+    final projectedFromCurrent = layoutBoundary - current.medianOffsetMs;
+    final projectedFromNext = layoutBoundary - next.medianOffsetMs;
+    final rawBoundary = ((projectedFromCurrent + projectedFromNext) / 2).round();
+    return math.max(minBoundary, math.min(maxBoundary, rawBoundary)).clamp(
+          0,
+          videoDurationMs,
+        ) as int;
+  }
+
+  static List<_SegmentDraft> _segmentizeRangeByOffset({
+    required int videoStartMs,
+    required int videoEndMs,
+    required int offsetMs,
+    required List<_WorkerMedia> audios,
+    required int anchorCount,
+    required double confidence,
+    required String notes,
+  }) {
+    if (videoEndMs <= videoStartMs) return const [];
+    final drafts = <_SegmentDraft>[];
+    final globalStartMs = videoStartMs + offsetMs;
+    final globalEndMs = videoEndMs + offsetMs;
+
+    for (final audio in audios) {
+      final overlapStart = math.max(globalStartMs, audio.layoutStartMs);
+      final overlapEnd = math.min(globalEndMs, audio.layoutEndMs);
+      if (overlapEnd <= overlapStart) continue;
+      final adjustedVideoStart = videoStartMs + (overlapStart - globalStartMs);
+      final adjustedVideoEnd = videoEndMs - (globalEndMs - overlapEnd);
+      if (adjustedVideoEnd <= adjustedVideoStart) continue;
+      final startClamped = overlapStart > globalStartMs;
+      final endClamped = overlapEnd < globalEndMs;
+      drafts.add(
+        _SegmentDraft(
+          audioFileId: audio.id,
+          videoStartMs: adjustedVideoStart,
+          videoEndMs: adjustedVideoEnd,
+          audioSourceInMs: overlapStart - audio.layoutStartMs,
+          audioSourceOutMs: overlapEnd - audio.layoutStartMs,
+          offsetMs: offsetMs,
+          anchorCount: anchorCount,
+          confidence: confidence,
+          sourceClamped: startClamped,
+          audioTooShort: endClamped,
+          sourceClampedReason: startClamped
+              ? '${audio.fileName} 起点不足 ${overlapStart - globalStartMs}ms'
+              : null,
+          notes: notes,
+        ),
+      );
+    }
+
+    return drafts;
+  }
+
+  static List<_SegmentDraft> _mergeSegmentDrafts(List<_SegmentDraft> drafts) {
+    if (drafts.length <= 1) return drafts;
+    final sorted = [...drafts]
+      ..sort((left, right) {
+        final startCompare = left.videoStartMs.compareTo(right.videoStartMs);
+        if (startCompare != 0) return startCompare;
+        return left.audioSourceInMs.compareTo(right.audioSourceInMs);
+      });
+    final merged = <_SegmentDraft>[sorted.first];
+
+    for (final current in sorted.skip(1)) {
+      final previous = merged.last;
+      final canMerge =
+          previous.audioFileId == current.audioFileId &&
+          current.videoStartMs - previous.videoEndMs <=
+              AppConstants.segmentMergeGapToleranceMs &&
+          (current.offsetMs - previous.offsetMs).abs() <=
+              AppConstants.segmentMergeOffsetToleranceMs;
+      if (!canMerge) {
+        merged.add(current);
+        continue;
+      }
+      merged[merged.length - 1] = previous.copyWith(
+        videoEndMs: current.videoEndMs,
+        audioSourceOutMs: current.audioSourceOutMs,
+        offsetMs: ((previous.offsetMs + current.offsetMs) / 2).round(),
+        anchorCount: previous.anchorCount + current.anchorCount,
+        confidence: math.max(previous.confidence, current.confidence),
+        sourceClamped: previous.sourceClamped || current.sourceClamped,
+        audioTooShort: previous.audioTooShort || current.audioTooShort,
+        sourceClampedReason: previous.sourceClampedReason ?? current.sourceClampedReason,
+        notes: '${previous.notes ?? ''}${previous.notes == null ? '' : ' | '}${current.notes ?? ''}',
+      );
+    }
+
+    return merged;
+  }
+
+  static _AggregateAlignmentResult _buildFallbackAlignment({
+    required String syncResultId,
+    required _WorkerMedia video,
+    required List<_WorkerMedia> audios,
+    required int coarseOffsetMs,
+  }) {
+    final drafts = _segmentizeRangeByOffset(
+      videoStartMs: 0,
+      videoEndMs: video.durationMs,
+      offsetMs: coarseOffsetMs,
+      audios: audios,
+      anchorCount: 0,
+      confidence: 0.0,
+      notes: 'fallback',
+    );
+    if (drafts.isEmpty) {
+      return _AggregateAlignmentResult(
+        segments: const [],
+        anchors: const [],
+        primaryAudioFileId: null,
+        summaryAudioSourceInMs: null,
+        summaryAudioSourceOutMs: null,
+        sourceClamped: coarseOffsetMs < 0,
+        audioTooShort: true,
+        timelineOffsetMs: math.max(0, -coarseOffsetMs),
+        finalOffsetMs: coarseOffsetMs,
+        offsetMadMs: 0,
+        alignmentCoverage: 0,
+        switchCount: 0,
+        sourceClampedReason: coarseOffsetMs < 0 ? '粗匹配起点越界' : null,
+        notes: 'fallback-empty',
+      );
+    }
+
+    final segments = <SyncAudioSegment>[];
+    var coveredVideoMs = 0;
+    var sourceClamped = false;
+    var audioTooShort = false;
+    for (var index = 0; index < drafts.length; index++) {
+      final draft = drafts[index];
+      coveredVideoMs += math.max(0, draft.videoEndMs - draft.videoStartMs);
+      sourceClamped = sourceClamped || draft.sourceClamped;
+      audioTooShort = audioTooShort || draft.audioTooShort;
+      segments.add(
+        SyncAudioSegment(
+          id: _uuid.v4(),
+          syncResultId: syncResultId,
+          segmentIndex: index,
+          audioFileId: draft.audioFileId,
+          videoStartMs: draft.videoStartMs,
+          videoEndMs: draft.videoEndMs,
+          audioSourceInMs: draft.audioSourceInMs,
+          audioSourceOutMs: draft.audioSourceOutMs,
+          offsetMs: coarseOffsetMs,
+          anchorCount: 0,
+          confidence: 0.0,
+          notes: draft.notes,
+          createdAt: DateTime.now(),
+        ),
+      );
+    }
+
+    final coverage = video.durationMs <= 0
+        ? 0.0
+        : (coveredVideoMs / video.durationMs).clamp(0.0, 1.0);
+    return _AggregateAlignmentResult(
+      segments: segments,
+      anchors: const [],
+      primaryAudioFileId: segments.first.audioFileId,
+      summaryAudioSourceInMs: segments.first.audioSourceInMs,
+      summaryAudioSourceOutMs: segments.first.audioSourceOutMs,
+      sourceClamped: sourceClamped,
+      audioTooShort: audioTooShort || coverage < 0.999,
+      timelineOffsetMs: segments.first.videoStartMs,
+      finalOffsetMs: coarseOffsetMs,
+      offsetMadMs: 0,
+      alignmentCoverage: coverage,
+      switchCount: math.max(0, segments.length - 1),
+      sourceClampedReason: sourceClamped ? '粗匹配起点越界' : null,
+      notes: 'fallback, segments=${segments.length}',
+    );
+  }
+
+  static SyncAudioSegment _buildSingleSegment({
+    required String syncResultId,
+    required String audioFileId,
+    required int videoStartMs,
+    required int videoEndMs,
+    required int audioSourceInMs,
+    required int audioSourceOutMs,
+    required int offsetMs,
+    required int anchorCount,
+    required double confidence,
+    required String? notes,
+  }) {
+    return SyncAudioSegment(
+      id: _uuid.v4(),
+      syncResultId: syncResultId,
+      segmentIndex: 0,
+      audioFileId: audioFileId,
+      videoStartMs: videoStartMs,
+      videoEndMs: videoEndMs,
+      audioSourceInMs: audioSourceInMs,
+      audioSourceOutMs: audioSourceOutMs,
+      offsetMs: offsetMs,
+      anchorCount: anchorCount,
+      confidence: confidence,
+      notes: notes,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  static _WorkerMedia? _resolveAudioForGlobalMs(
+    List<_WorkerMedia> audios,
+    int globalMs,
+  ) {
+    for (final audio in audios) {
+      final inRange = globalMs >= audio.layoutStartMs &&
+          (globalMs < audio.layoutEndMs ||
+              (globalMs == audio.layoutEndMs && audio == audios.last));
+      if (inRange) {
+        return audio;
+      }
+    }
+    return null;
+  }
+
+  static _OffsetClusterSelection? _selectDominantOffsetCluster(
+    List<LimitedCandidateEntry<_CandidateHit>> entries,
+  ) {
+    if (entries.isEmpty) return null;
+    final sorted = [...entries]
+      ..sort((left, right) {
+        final leftOffset =
+            left.value.audioWindow.startMs - left.value.videoWindow.startMs;
+        final rightOffset =
+            right.value.audioWindow.startMs - right.value.videoWindow.startMs;
+        return leftOffset.compareTo(rightOffset);
+      });
+
+    final clusters = <List<LimitedCandidateEntry<_CandidateHit>>>[];
+    var current = <LimitedCandidateEntry<_CandidateHit>>[sorted.first];
+    int previousOffset =
+        sorted.first.value.audioWindow.startMs - sorted.first.value.videoWindow.startMs;
+    for (final entry in sorted.skip(1)) {
+      final offset =
+          entry.value.audioWindow.startMs - entry.value.videoWindow.startMs;
+      if ((offset - previousOffset).abs() <=
+          AppConstants.offsetClusterToleranceMs) {
+        current.add(entry);
+      } else {
+        clusters.add(current);
+        current = [entry];
+      }
+      previousOffset = offset;
+    }
+    clusters.add(current);
+
+    List<LimitedCandidateEntry<_CandidateHit>> bestCluster = clusters.first;
+    double bestWeight = _clusterWeight(bestCluster);
+    for (final cluster in clusters.skip(1)) {
+      final weight = _clusterWeight(cluster);
+      if (weight > bestWeight) {
+        bestWeight = weight;
+        bestCluster = cluster;
+      }
+    }
+
+    final sortedByScore = [...bestCluster]
+      ..sort((left, right) => right.score.compareTo(left.score));
+    final offsets = bestCluster
+        .map((entry) => entry.value.audioWindow.startMs - entry.value.videoWindow.startMs)
+        .toList();
+    return _OffsetClusterSelection(
+      entries: sortedByScore,
+      offsets: offsets,
+      weightedMedianOffsetMs: _weightedMedianOffset(bestCluster),
+      bestEntry: sortedByScore.first,
+    );
+  }
+
+  static double _clusterWeight(List<LimitedCandidateEntry<_CandidateHit>> cluster) {
+    return cluster.fold<double>(
+      0.0,
+      (sum, entry) =>
+          sum + (entry.value.textScore * entry.value.audioWindow.uniquenessWeight),
+    );
+  }
+
+  static int _weightedMedianOffset(
+    List<LimitedCandidateEntry<_CandidateHit>> cluster,
+  ) {
+    final weighted = cluster
+        .map(
+          (entry) => (
+            offset:
+                entry.value.audioWindow.startMs - entry.value.videoWindow.startMs,
+            weight: entry.value.textScore * entry.value.audioWindow.uniquenessWeight,
+          ),
+        )
+        .toList()
+      ..sort((left, right) => left.offset.compareTo(right.offset));
+    final totalWeight = weighted.fold<double>(0.0, (sum, item) => sum + item.weight);
+    if (totalWeight <= 0) {
+      return weighted[weighted.length ~/ 2].offset;
+    }
+    double accumulated = 0.0;
+    for (final item in weighted) {
+      accumulated += item.weight;
+      if (accumulated >= totalWeight / 2) {
+        return item.offset;
+      }
+    }
+    return weighted.last.offset;
+  }
+
+  static int _medianInt(List<int> values) {
+    if (values.isEmpty) return 0;
+    final sorted = [...values]..sort();
+    final middle = sorted.length ~/ 2;
+    if (sorted.length.isOdd) return sorted[middle];
+    return ((sorted[middle - 1] + sorted[middle]) / 2).round();
+  }
+
+  static double _medianAbsoluteDeviationMs(List<int> values, int median) {
+    if (values.isEmpty) return 0.0;
+    final deviations = values.map((value) => (value - median).abs()).toList()
+      ..sort();
+    final middle = deviations.length ~/ 2;
+    if (deviations.length.isOdd) {
+      return deviations[middle].toDouble();
+    }
+    return (deviations[middle - 1] + deviations[middle]) / 2;
+  }
+
+  static double _lowValueMultiplier(String normalizedText) {
+    if (normalizedText.isEmpty) return 1.0;
+    final compact = normalizedText.replaceAll(' ', '');
+    if (compact.length <= 2 && AppConstants.lowValuePhrases.contains(compact)) {
+      return 0.25;
+    }
+    final tokens = normalizedText
+        .split(' ')
+        .where((token) => token.isNotEmpty)
+        .toList();
+    if (compact.length <= 4 &&
+        tokens.isNotEmpty &&
+        tokens.every(AppConstants.lowValuePhrases.contains)) {
+      return 0.4;
+    }
+    return 1.0;
   }
 
   static Map<String, MatchCandidate> _scoreCandidates({
@@ -2017,5 +2873,208 @@ class _AnchorBundle {
     required this.offsetMs,
     required this.averageSimilarity,
     required this.notes,
+  });
+}
+
+class _AggregateCandidate {
+  final String projectId;
+  final String videoFileId;
+  final String bestVideoWindowId;
+  final String bestAudioWindowId;
+  final double textScore;
+  final double contextScore;
+  final double anchorScore;
+  final double uniquenessScore;
+  final double metadataScore;
+  final double neighborScore;
+  final double totalScore;
+  final int fallbackOffsetMs;
+
+  const _AggregateCandidate({
+    required this.projectId,
+    required this.videoFileId,
+    required this.bestVideoWindowId,
+    required this.bestAudioWindowId,
+    required this.textScore,
+    required this.contextScore,
+    required this.anchorScore,
+    required this.uniquenessScore,
+    required this.metadataScore,
+    required this.neighborScore,
+    required this.totalScore,
+    required this.fallbackOffsetMs,
+  });
+}
+
+class _AggregateAlignmentResult {
+  final List<SyncAudioSegment> segments;
+  final List<AnchorPair> anchors;
+  final String? primaryAudioFileId;
+  final int? summaryAudioSourceInMs;
+  final int? summaryAudioSourceOutMs;
+  final bool sourceClamped;
+  final bool audioTooShort;
+  final int timelineOffsetMs;
+  final int finalOffsetMs;
+  final double offsetMadMs;
+  final double alignmentCoverage;
+  final int switchCount;
+  final String? sourceClampedReason;
+  final String notes;
+
+  const _AggregateAlignmentResult({
+    required this.segments,
+    required this.anchors,
+    required this.primaryAudioFileId,
+    required this.summaryAudioSourceInMs,
+    required this.summaryAudioSourceOutMs,
+    required this.sourceClamped,
+    required this.audioTooShort,
+    required this.timelineOffsetMs,
+    required this.finalOffsetMs,
+    required this.offsetMadMs,
+    required this.alignmentCoverage,
+    required this.switchCount,
+    required this.sourceClampedReason,
+    required this.notes,
+  });
+
+  const _AggregateAlignmentResult.empty()
+    : segments = const [],
+      anchors = const [],
+      primaryAudioFileId = null,
+      summaryAudioSourceInMs = null,
+      summaryAudioSourceOutMs = null,
+      sourceClamped = false,
+      audioTooShort = false,
+      timelineOffsetMs = 0,
+      finalOffsetMs = 0,
+      offsetMadMs = 0,
+      alignmentCoverage = 0,
+      switchCount = 0,
+      sourceClampedReason = null,
+      notes = '';
+}
+
+class _AggregateAnchorCandidate {
+  final int audioIndex;
+  final _WorkerClip videoClip;
+  final _WorkerClip audioClip;
+  final int offsetMs;
+  final double score;
+
+  const _AggregateAnchorCandidate({
+    required this.audioIndex,
+    required this.videoClip,
+    required this.audioClip,
+    required this.offsetMs,
+    required this.score,
+  });
+}
+
+class _MatchedAggregateAnchor {
+  final int audioIndex;
+  final _WorkerClip videoClip;
+  final _WorkerClip audioClip;
+  final String audioFileId;
+  final int offsetMs;
+  final double score;
+
+  const _MatchedAggregateAnchor({
+    required this.audioIndex,
+    required this.videoClip,
+    required this.audioClip,
+    required this.audioFileId,
+    required this.offsetMs,
+    required this.score,
+  });
+}
+
+class _AnchorGroup {
+  final List<_MatchedAggregateAnchor> anchors;
+
+  const _AnchorGroup(this.anchors);
+
+  String get audioFileId => anchors.first.audioFileId;
+  int get firstVideoTimeMs => anchors.first.videoClip.localStartMs;
+  int get lastVideoTimeMs => anchors.last.videoClip.localStartMs;
+  int get medianOffsetMs =>
+      SubtitleMatchService._medianInt(anchors.map((item) => item.offsetMs).toList());
+  double get averageSimilarity =>
+      anchors.fold<double>(0.0, (sum, item) => sum + item.score) /
+      anchors.length;
+}
+
+class _SegmentDraft {
+  final String audioFileId;
+  final int videoStartMs;
+  final int videoEndMs;
+  final int audioSourceInMs;
+  final int audioSourceOutMs;
+  final int offsetMs;
+  final int anchorCount;
+  final double confidence;
+  final bool sourceClamped;
+  final bool audioTooShort;
+  final String? sourceClampedReason;
+  final String? notes;
+
+  const _SegmentDraft({
+    required this.audioFileId,
+    required this.videoStartMs,
+    required this.videoEndMs,
+    required this.audioSourceInMs,
+    required this.audioSourceOutMs,
+    required this.offsetMs,
+    required this.anchorCount,
+    required this.confidence,
+    required this.sourceClamped,
+    required this.audioTooShort,
+    required this.sourceClampedReason,
+    required this.notes,
+  });
+
+  _SegmentDraft copyWith({
+    int? videoStartMs,
+    int? videoEndMs,
+    int? audioSourceInMs,
+    int? audioSourceOutMs,
+    int? offsetMs,
+    int? anchorCount,
+    double? confidence,
+    bool? sourceClamped,
+    bool? audioTooShort,
+    String? sourceClampedReason,
+    String? notes,
+  }) {
+    return _SegmentDraft(
+      audioFileId: audioFileId,
+      videoStartMs: videoStartMs ?? this.videoStartMs,
+      videoEndMs: videoEndMs ?? this.videoEndMs,
+      audioSourceInMs: audioSourceInMs ?? this.audioSourceInMs,
+      audioSourceOutMs: audioSourceOutMs ?? this.audioSourceOutMs,
+      offsetMs: offsetMs ?? this.offsetMs,
+      anchorCount: anchorCount ?? this.anchorCount,
+      confidence: confidence ?? this.confidence,
+      sourceClamped: sourceClamped ?? this.sourceClamped,
+      audioTooShort: audioTooShort ?? this.audioTooShort,
+      sourceClampedReason:
+          sourceClampedReason ?? this.sourceClampedReason,
+      notes: notes ?? this.notes,
+    );
+  }
+}
+
+class _OffsetClusterSelection {
+  final List<LimitedCandidateEntry<_CandidateHit>> entries;
+  final List<int> offsets;
+  final int weightedMedianOffsetMs;
+  final LimitedCandidateEntry<_CandidateHit> bestEntry;
+
+  const _OffsetClusterSelection({
+    required this.entries,
+    required this.offsets,
+    required this.weightedMedianOffsetMs,
+    required this.bestEntry,
   });
 }

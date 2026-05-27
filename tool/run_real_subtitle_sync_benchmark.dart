@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:asr_tools/models/asr_project.dart';
 import 'package:asr_tools/models/media_file.dart';
 import 'package:asr_tools/models/subtitle_file.dart';
+import 'package:asr_tools/models/timeline_data.dart';
+import 'package:asr_tools/services/app_data_service.dart';
 import 'package:asr_tools/services/audio_align_service.dart';
 import 'package:asr_tools/services/database_service.dart';
 import 'package:asr_tools/services/export_service.dart';
@@ -17,11 +20,21 @@ import 'package:asr_tools/services/subtitle_prepare_service.dart';
 const _videoDir = r'G:\data\260224-元数据脚本测试\1_Video\220822shipin';
 const _audioDir = r'G:\data\260224-元数据脚本测试\2_Audio\220822yinpin';
 const _subtitleDir = r'G:\data\260224-元数据脚本测试\3_srt';
+const _defaultVideoSrt = r'G:\data\260224-元数据脚本测试\3_srt\0916视频字幕.srt';
+const _defaultAudioSrt = r'G:\data\260224-元数据脚本测试\3_srt\0916音频字幕.srt';
 const _ffmpegDir = r'G:\data\app\DIT\ffmpeg';
 const _outputDir = r'G:\data\app\ASR-tools\测试合板';
 const _projectNamePrefix = 'real-subtitle-sync-benchmark';
 
-Future<void> main() async {
+Future<void> main([List<String> args = const []]) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final videoSrt = _readStringOption(args, 'video-srt') ?? _defaultVideoSrt;
+  final audioSrt = _readStringOption(args, 'audio-srt') ?? _defaultAudioSrt;
+  AppDataService.debugOverrideDirectories(
+    executableDir: r'G:\data\app\ASR-tools\output\benchmark-runtime',
+    legacySettingsDir: r'G:\data\app\ASR-tools\output\benchmark-runtime\legacy_settings',
+    legacyDatabaseDir: r'G:\data\app\ASR-tools\output\benchmark-runtime\legacy_database',
+  );
   final totalWatch = Stopwatch()..start();
   FfmpegService.setFfmpegDir(_ffmpegDir);
   await DatabaseService.init();
@@ -41,7 +54,7 @@ Future<void> main() async {
     _audioDir,
     MediaType.audio,
   );
-  await _insertSubtitleFiles(project.id);
+  await _insertSubtitleFiles(project.id, videoSrt: videoSrt, audioSrt: audioSrt);
   importWatch.stop();
   stdout.writeln(
     '导入完成: 视频=$videoCount 音频=$audioCount 用时=${importWatch.elapsed}',
@@ -86,12 +99,16 @@ Future<void> main() async {
     preset: ExportPreset.review,
   );
   await ExportService.exportCsvReport(timeline, '$exportBase.csv');
+  await File('$exportBase.segments.txt').writeAsString(
+    _buildSegmentSummary(timeline),
+  );
 
   totalWatch.stop();
   stdout.writeln('总耗时: ${totalWatch.elapsed}');
   stdout.writeln('已导出: $exportBase.xml');
   stdout.writeln('已导出: $exportBase.fcpxml');
   stdout.writeln('已导出: $exportBase.csv');
+  stdout.writeln('已导出: $exportBase.segments.txt');
 }
 
 Future<void> _cleanupProjects() async {
@@ -151,13 +168,17 @@ Future<int> _importDirectory(
   return files.length;
 }
 
-Future<void> _insertSubtitleFiles(String projectId) async {
+Future<void> _insertSubtitleFiles(
+  String projectId, {
+  required String videoSrt,
+  required String audioSrt,
+}) async {
   final now = DateTime.now();
   await DatabaseService.insertSubtitleFile(
     SubtitleFile(
       id: const Uuid().v4(),
       projectId: projectId,
-      filePath: p.join(_subtitleDir, '视频.srt'),
+      filePath: videoSrt,
       mediaType: MediaType.video,
       sourceType: SubtitleSourceType.aggregate,
       createdAt: now,
@@ -167,10 +188,42 @@ Future<void> _insertSubtitleFiles(String projectId) async {
     SubtitleFile(
       id: const Uuid().v4(),
       projectId: projectId,
-      filePath: p.join(_subtitleDir, '音频.srt'),
+      filePath: audioSrt,
       mediaType: MediaType.audio,
       sourceType: SubtitleSourceType.aggregate,
       createdAt: now,
     ),
   );
+}
+
+String? _readStringOption(List<String> args, String name) {
+  final inlinePrefix = '--$name=';
+  for (int i = 0; i < args.length; i++) {
+    final arg = args[i];
+    if (arg.startsWith(inlinePrefix)) {
+      return arg.substring(inlinePrefix.length);
+    }
+    if (arg == '--$name' && i + 1 < args.length) {
+      return args[i + 1];
+    }
+  }
+  return null;
+}
+
+String _buildSegmentSummary(List<TimelineData> timeline) {
+  final buffer = StringBuffer();
+  for (final item in timeline) {
+    buffer.writeln('${item.videoFileName} | status=${item.status} | segments=${item.segmentCount}');
+    for (final segment in item.segments) {
+      buffer.writeln(
+        '  S${segment.segmentIndex + 1} ${segment.audioFileName} | '
+        'video=${segment.videoStartMs}-${segment.videoEndMs} | '
+        'audio=${segment.audioSourceInMs}-${segment.audioSourceOutMs} | '
+        'offset=${segment.offsetMs} | anchors=${segment.anchorCount} | '
+        'confidence=${segment.confidence.toStringAsFixed(4)}',
+      );
+    }
+    buffer.writeln();
+  }
+  return buffer.toString();
 }

@@ -929,7 +929,9 @@ class _SyncReviewPageState extends ConsumerState<SyncReviewPage> {
         syncResult.reviewStatus == SyncReviewStatus.pending;
     final showReject = syncResult.reviewStatus != SyncReviewStatus.rejected;
     final showRestore = syncResult.reviewStatus == SyncReviewStatus.rejected;
+    final isMultiSegment = detail.segments.length > 1;
     final canMatch =
+        !isMultiSegment &&
         detail.aggregateAudioSubtitleFile != null &&
         _manualPreview?.canMatch == true &&
         !_isPreviewLoading;
@@ -972,7 +974,7 @@ class _SyncReviewPageState extends ConsumerState<SyncReviewPage> {
         OutlinedButton.icon(
           onPressed: _isHandlingAction || !canMatch ? null : _handleManualMatch,
           icon: const Icon(Icons.add_link, size: 16),
-          label: const Text('匹配'),
+          label: Text(isMultiSegment ? '多段只读' : '匹配'),
         ),
         if (showReject) ...[
           const SizedBox(width: 10),

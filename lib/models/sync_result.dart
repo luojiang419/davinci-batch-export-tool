@@ -49,6 +49,12 @@ class SyncResult {
   final bool sourceClamped;
   final bool audioTooShort;
   final int timelineOffsetMs;
+  final int coarseOffsetMs;
+  final int finalOffsetMs;
+  final double offsetMadMs;
+  final double alignmentCoverage;
+  final int switchCount;
+  final String? sourceClampedReason;
   final SyncReviewStatus reviewStatus;
   final int? reviewedAtMs;
   final String? reviewNote;
@@ -74,6 +80,12 @@ class SyncResult {
     this.sourceClamped = false,
     this.audioTooShort = false,
     this.timelineOffsetMs = 0,
+    this.coarseOffsetMs = 0,
+    this.finalOffsetMs = 0,
+    this.offsetMadMs = 0,
+    this.alignmentCoverage = 0,
+    this.switchCount = 0,
+    this.sourceClampedReason,
     this.reviewStatus = SyncReviewStatus.pending,
     this.reviewedAtMs,
     this.reviewNote,
@@ -104,6 +116,12 @@ class SyncResult {
     bool? sourceClamped,
     bool? audioTooShort,
     int? timelineOffsetMs,
+    int? coarseOffsetMs,
+    int? finalOffsetMs,
+    double? offsetMadMs,
+    double? alignmentCoverage,
+    int? switchCount,
+    String? sourceClampedReason,
     SyncReviewStatus? reviewStatus,
     int? reviewedAtMs,
     bool clearReviewedAtMs = false,
@@ -130,6 +148,13 @@ class SyncResult {
       sourceClamped: sourceClamped ?? this.sourceClamped,
       audioTooShort: audioTooShort ?? this.audioTooShort,
       timelineOffsetMs: timelineOffsetMs ?? this.timelineOffsetMs,
+      coarseOffsetMs: coarseOffsetMs ?? this.coarseOffsetMs,
+      finalOffsetMs: finalOffsetMs ?? this.finalOffsetMs,
+      offsetMadMs: offsetMadMs ?? this.offsetMadMs,
+      alignmentCoverage: alignmentCoverage ?? this.alignmentCoverage,
+      switchCount: switchCount ?? this.switchCount,
+      sourceClampedReason:
+          sourceClampedReason ?? this.sourceClampedReason,
       reviewStatus: reviewStatus ?? this.reviewStatus,
       reviewedAtMs: clearReviewedAtMs
           ? null
@@ -166,6 +191,13 @@ class SyncResult {
       sourceClamped: (map['source_clamped'] as int? ?? 0) == 1,
       audioTooShort: (map['audio_too_short'] as int? ?? 0) == 1,
       timelineOffsetMs: map['timeline_offset_ms'] as int? ?? 0,
+      coarseOffsetMs: map['coarse_offset_ms'] as int? ?? 0,
+      finalOffsetMs: map['final_offset_ms'] as int? ?? 0,
+      offsetMadMs: (map['offset_mad_ms'] as num?)?.toDouble() ?? 0.0,
+      alignmentCoverage:
+          (map['alignment_coverage'] as num?)?.toDouble() ?? 0.0,
+      switchCount: map['switch_count'] as int? ?? 0,
+      sourceClampedReason: map['source_clamped_reason'] as String?,
       reviewStatus: _parseReviewStatus(map),
       reviewedAtMs: map['reviewed_at_ms'] as int?,
       reviewNote: map['review_note'] as String?,
@@ -193,6 +225,12 @@ class SyncResult {
     'source_clamped': sourceClamped ? 1 : 0,
     'audio_too_short': audioTooShort ? 1 : 0,
     'timeline_offset_ms': timelineOffsetMs,
+    'coarse_offset_ms': coarseOffsetMs,
+    'final_offset_ms': finalOffsetMs,
+    'offset_mad_ms': offsetMadMs,
+    'alignment_coverage': alignmentCoverage,
+    'switch_count': switchCount,
+    'source_clamped_reason': sourceClampedReason,
     'needs_review': needsReview ? 1 : 0,
     'review_status': reviewStatus.name,
     'reviewed_at_ms': reviewedAtMs,

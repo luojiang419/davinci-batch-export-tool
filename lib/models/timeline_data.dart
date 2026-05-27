@@ -1,3 +1,4 @@
+import 'timeline_audio_segment.dart';
 import 'subtitle_clip.dart';
 import 'sync_result.dart';
 
@@ -26,10 +27,17 @@ class TimelineData {
   final int anchorCount;
   final bool sourceClamped;
   final bool audioTooShort;
+  final int coarseOffsetMs;
+  final int finalOffsetMs;
+  final double offsetMadMs;
+  final double alignmentCoverage;
+  final int switchCount;
+  final String? sourceClampedReason;
   final SyncReviewStatus reviewStatus;
   final int? reviewedAtMs;
   final String? reviewNote;
   final String? trimmedAudioPath;
+  final List<TimelineAudioSegment> segments;
   final List<SubtitleClip> videoSubtitles;
   final List<SubtitleClip> audioSubtitles;
 
@@ -57,10 +65,17 @@ class TimelineData {
     this.anchorCount = 0,
     this.sourceClamped = false,
     this.audioTooShort = false,
+    this.coarseOffsetMs = 0,
+    this.finalOffsetMs = 0,
+    this.offsetMadMs = 0,
+    this.alignmentCoverage = 0,
+    this.switchCount = 0,
+    this.sourceClampedReason,
     this.reviewStatus = SyncReviewStatus.pending,
     this.reviewedAtMs,
     this.reviewNote,
     this.trimmedAudioPath,
+    this.segments = const [],
     this.videoSubtitles = const [],
     this.audioSubtitles = const [],
   });
@@ -81,6 +96,12 @@ class TimelineData {
     int? anchorCount,
     bool? sourceClamped,
     bool? audioTooShort,
+    int? coarseOffsetMs,
+    int? finalOffsetMs,
+    double? offsetMadMs,
+    double? alignmentCoverage,
+    int? switchCount,
+    String? sourceClampedReason,
     SyncReviewStatus? reviewStatus,
     int? reviewedAtMs,
     bool clearReviewedAtMs = false,
@@ -88,6 +109,7 @@ class TimelineData {
     bool clearReviewNote = false,
     String? trimmedAudioPath,
     bool? videoHasEmbeddedAudio,
+    List<TimelineAudioSegment>? segments,
     List<SubtitleClip>? videoSubtitles,
     List<SubtitleClip>? audioSubtitles,
   }) {
@@ -117,12 +139,20 @@ class TimelineData {
       anchorCount: anchorCount ?? this.anchorCount,
       sourceClamped: sourceClamped ?? this.sourceClamped,
       audioTooShort: audioTooShort ?? this.audioTooShort,
+      coarseOffsetMs: coarseOffsetMs ?? this.coarseOffsetMs,
+      finalOffsetMs: finalOffsetMs ?? this.finalOffsetMs,
+      offsetMadMs: offsetMadMs ?? this.offsetMadMs,
+      alignmentCoverage: alignmentCoverage ?? this.alignmentCoverage,
+      switchCount: switchCount ?? this.switchCount,
+      sourceClampedReason:
+          sourceClampedReason ?? this.sourceClampedReason,
       reviewStatus: reviewStatus ?? this.reviewStatus,
       reviewedAtMs: clearReviewedAtMs
           ? null
           : reviewedAtMs ?? this.reviewedAtMs,
       reviewNote: clearReviewNote ? null : reviewNote ?? this.reviewNote,
       trimmedAudioPath: trimmedAudioPath ?? this.trimmedAudioPath,
+      segments: segments ?? this.segments,
       videoSubtitles: videoSubtitles ?? this.videoSubtitles,
       audioSubtitles: audioSubtitles ?? this.audioSubtitles,
     );
@@ -133,6 +163,7 @@ class TimelineData {
   bool get needsReview => reviewStatus == SyncReviewStatus.pending;
   bool get hasTrimmedAudio =>
       trimmedAudioPath != null && trimmedAudioPath!.isNotEmpty;
+  int get segmentCount => segments.length;
   String get effectiveAudioPath =>
       hasTrimmedAudio ? trimmedAudioPath! : audioFilePath;
   int get effectiveAudioSourceInMs => hasTrimmedAudio ? 0 : audioTrimStartMs;
@@ -140,4 +171,5 @@ class TimelineData {
       effectiveAudioSourceInMs + audioDurationMs;
   int get effectiveAudioFileDurationMs =>
       hasTrimmedAudio ? audioDurationMs : audioOriginalDurationMs;
+  List<String> get segmentFiles => segments.map((item) => item.audioFileName).toList();
 }

@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:path/path.dart' as p;
 
 import '../models/subtitle_clip.dart';
+import '../models/timeline_audio_segment.dart';
 import '../models/timeline_data.dart';
 import '../models/sync_result.dart';
+import '../models/sync_audio_segment.dart';
 import 'database_service.dart';
 import 'ffmpeg_service.dart';
 
@@ -35,14 +38,40 @@ class AudioAlignService {
     final audioFile = syncResult.audioFileId == null
         ? null
         : await DatabaseService.getMediaFileById(syncResult.audioFileId!);
+    var segmentRows = await DatabaseService.getSyncAudioSegments(syncResult.id);
+    if (segmentRows.isEmpty &&
+        syncResult.audioFileId != null &&
+        syncResult.audioSourceInMs != null &&
+        syncResult.audioSourceOutMs != null) {
+      segmentRows = [
+        SyncAudioSegment(
+          id: syncResult.id,
+          syncResultId: syncResult.id,
+          segmentIndex: 0,
+          audioFileId: syncResult.audioFileId!,
+          videoStartMs: math.max(0, syncResult.timelineOffsetMs),
+          videoEndMs: syncResult.videoDurationMs,
+          audioSourceInMs: syncResult.audioSourceInMs!,
+          audioSourceOutMs: syncResult.audioSourceOutMs!,
+          offsetMs: syncResult.finalOffsetMs,
+          anchorCount: syncResult.anchorCount,
+          confidence: syncResult.confidence,
+          notes: syncResult.notes,
+          createdAt: syncResult.createdAt,
+        ),
+      ];
+    }
 
     final videoSubtitles = await DatabaseService.getSubtitleClips(videoFile.id);
-    final audioSubtitles = audioFile == null
-        ? const <SubtitleClip>[]
-        : await DatabaseService.getSubtitleClips(audioFile.id);
+    final timelineSegments = await _buildTimelineSegments(segmentRows);
+    final audioSubtitles = await _mapSegmentAudioSubtitles(
+      timelineSegments,
+      videoTimelineStartMs: syncResult.timelineStartMs,
+    );
 
-    final audioTrimStartMs = syncResult.audioSourceInMs ?? 0;
-    final audioTrimEndMs = syncResult.audioSourceOutMs ?? 0;
+    final primarySegment = timelineSegments.isEmpty ? null : timelineSegments.first;
+    final audioTrimStartMs = primarySegment?.audioSourceInMs ?? 0;
+    final audioTrimEndMs = primarySegment?.audioSourceOutMs ?? 0;
 
     return TimelineData(
       syncResultId: syncResult.id,
@@ -53,13 +82,14 @@ class AudioAlignService {
           ? '未匹配音频'
           : _fileName(audioFile.filePath),
       videoFilePath: videoFile.filePath,
-      audioFilePath: audioFile?.filePath ?? '',
+      audioFilePath: primarySegment?.audioFilePath ?? audioFile?.filePath ?? '',
       videoHasEmbeddedAudio: videoFile.hasEmbeddedAudio,
       videoStartMs: 0,
       videoEndMs: syncResult.videoDurationMs,
       timelineStartMs: syncResult.timelineStartMs,
       timelineEndMs: syncResult.timelineEndMs,
-      audioOriginalDurationMs: audioFile?.durationMs ?? 0,
+      audioOriginalDurationMs:
+          primarySegment == null ? (audioFile?.durationMs ?? 0) : primarySegment.audioDurationMs,
       audioTrimStartMs: audioTrimStartMs,
       audioTrimEndMs: audioTrimEndMs,
       offsetMs: syncResult.timelineOffsetMs,
@@ -70,16 +100,47 @@ class AudioAlignService {
       anchorCount: syncResult.anchorCount,
       sourceClamped: syncResult.sourceClamped,
       audioTooShort: syncResult.audioTooShort,
+      coarseOffsetMs: syncResult.coarseOffsetMs,
+      finalOffsetMs: syncResult.finalOffsetMs,
+      offsetMadMs: syncResult.offsetMadMs,
+      alignmentCoverage: syncResult.alignmentCoverage,
+      switchCount: syncResult.switchCount,
+      sourceClampedReason: syncResult.sourceClampedReason,
       reviewStatus: syncResult.reviewStatus,
       reviewedAtMs: syncResult.reviewedAtMs,
       reviewNote: syncResult.reviewNote,
+      segments: timelineSegments,
       videoSubtitles: videoSubtitles,
-      audioSubtitles: _mapAudioSubtitlesToTimeline(
-        audioSubtitles,
-        videoTimelineStartMs: syncResult.timelineStartMs,
-        audioSourceInMs: syncResult.audioSourceInMs ?? 0,
-      ),
+      audioSubtitles: audioSubtitles,
     );
+  }
+
+  static Future<List<TimelineAudioSegment>> _buildTimelineSegments(
+    List<SyncAudioSegment> segments,
+  ) async {
+    final rows = <TimelineAudioSegment>[];
+    for (final segment in segments) {
+      final audioFile = await DatabaseService.getMediaFileById(segment.audioFileId);
+      if (audioFile == null) continue;
+      rows.add(
+        TimelineAudioSegment(
+          segmentIndex: segment.segmentIndex,
+          audioFileId: segment.audioFileId,
+          audioFileName: _fileName(audioFile.filePath),
+          audioFilePath: audioFile.filePath,
+          videoStartMs: segment.videoStartMs,
+          videoEndMs: segment.videoEndMs,
+          audioSourceInMs: segment.audioSourceInMs,
+          audioSourceOutMs: segment.audioSourceOutMs,
+          offsetMs: segment.offsetMs,
+          anchorCount: segment.anchorCount,
+          confidence: segment.confidence,
+          notes: segment.notes,
+        ),
+      );
+    }
+    rows.sort((left, right) => left.segmentIndex.compareTo(right.segmentIndex));
+    return rows;
   }
 
   static List<SubtitleClip> _mapAudioSubtitlesToTimeline(
@@ -116,6 +177,45 @@ class AudioAlignService {
         })
         .where((clip) => clip.endMs > clip.startMs)
         .toList();
+  }
+
+  static Future<List<SubtitleClip>> _mapSegmentAudioSubtitles(
+    List<TimelineAudioSegment> segments, {
+    required int videoTimelineStartMs,
+  }) async {
+    final mapped = <SubtitleClip>[];
+    for (final segment in segments) {
+      final clips = await DatabaseService.getSubtitleClips(segment.audioFileId);
+      final segmentMapped = _mapAudioSubtitlesToTimeline(
+        clips.where((clip) {
+          final localStart = clip.localStartMs ?? clip.startMs;
+          final localEnd = clip.localEndMs ?? clip.endMs;
+          return localEnd > segment.audioSourceInMs &&
+              localStart < segment.audioSourceOutMs;
+        }).toList(),
+        videoTimelineStartMs: videoTimelineStartMs + segment.videoStartMs,
+        audioSourceInMs: segment.audioSourceInMs,
+      ).map((clip) {
+        return SubtitleClip(
+          id: '${segment.segmentIndex}_${clip.id}',
+          subtitleFileId: clip.subtitleFileId,
+          mediaFileId: clip.mediaFileId,
+          sourceKind: clip.sourceKind,
+          startMs: clip.startMs,
+          endMs: clip.endMs,
+          globalStartMs: clip.globalStartMs,
+          globalEndMs: clip.globalEndMs,
+          localStartMs: clip.localStartMs,
+          localEndMs: clip.localEndMs,
+          text: clip.text,
+          normalizedText: clip.normalizedText,
+          sortOrder: clip.sortOrder,
+        );
+      });
+      mapped.addAll(segmentMapped);
+    }
+    mapped.sort((left, right) => left.startMs.compareTo(right.startMs));
+    return mapped;
   }
 
   static Future<List<String>> batchTrimAudio(
@@ -168,7 +268,7 @@ class AudioAlignService {
         ? '--'
         : _formatTime(syncResult.audioSourceOutMs!);
     return '${syncResult.status.label} ${(syncResult.confidence * 100).toStringAsFixed(0)}% | '
-        '$fileName | $sourceIn - $sourceOut | anchors=${syncResult.anchorCount}';
+        '$fileName | $sourceIn - $sourceOut | anchors=${syncResult.anchorCount} | segments=${math.max(1, syncResult.switchCount + 1)}';
   }
 
   static String _fileName(String path) => p.basename(path);

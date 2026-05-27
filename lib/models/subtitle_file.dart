@@ -2,6 +2,7 @@ import 'media_file.dart';
 
 enum SubtitleSourceType {
   aggregate('总字幕'),
+  generatedAggregate('生成总字幕'),
   perClip('单素材字幕');
 
   final String label;

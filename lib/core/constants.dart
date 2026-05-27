@@ -4,7 +4,7 @@ class AppConstants {
 
   // ========== 数据库 ==========
   static const String dbName = 'asr_tools.db';
-  static const int dbVersion = 5;
+  static const int dbVersion = 6;
 
   // ========== 文件扩展名过滤 ==========
   static const Set<String> videoExtensions = {
@@ -36,6 +36,7 @@ class AppConstants {
   static const double matchConfidenceLow = 0.45;
   static const int subtitleSplitMinDurationMs = 200;
   static const double subtitleBoundaryKeepRatio = 0.7;
+  static const int subtitleBoundarySnapToleranceMs = 500;
   static const int topKCandidates = 5;
   static const double matchMaxLengthDiffRatio = 0.55;
   static const double matchPrefilterDiceThreshold = 0.18;
@@ -43,6 +44,10 @@ class AppConstants {
   static const int matchMaxHitsPerAudio = 48;
   static const int anchorSearchRadiusMs = 45000;
   static const int anchorMaxCandidatesPerCue = 3;
+  static const int offsetClusterToleranceMs = 3000;
+  static const int offsetJumpSplitThresholdMs = 1500;
+  static const int segmentMergeGapToleranceMs = 250;
+  static const int segmentMergeOffsetToleranceMs = 300;
   static const Set<String> lowValuePhrases = {
     '嗯',
     '啊',

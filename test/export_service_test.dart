@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
 
+import 'package:asr_tools/models/timeline_audio_segment.dart';
 import 'package:asr_tools/models/timeline_data.dart';
 import 'package:asr_tools/services/export_service.dart';
 
@@ -250,6 +251,95 @@ void main() {
       expect(audioElements.first.getAttribute('lane'), '-2');
     },
   );
+
+  test('xmeml exports multiple external audio clipitems for segmented audio',
+      () async {
+    final outputPath = p.join(tempDir.path, 'timeline-multi.xml');
+    final timeline = _buildTimelineData(
+      videoHasEmbeddedAudio: false,
+      segments: const [
+        TimelineAudioSegment(
+          segmentIndex: 0,
+          audioFileId: 'audio-1',
+          audioFileName: 'A0001.wav',
+          audioFilePath: r'G:\audio\A0001.wav',
+          videoStartMs: 0,
+          videoEndMs: 2000,
+          audioSourceInMs: 1000,
+          audioSourceOutMs: 3000,
+          offsetMs: 1000,
+        ),
+        TimelineAudioSegment(
+          segmentIndex: 1,
+          audioFileId: 'audio-2',
+          audioFileName: 'A0002.wav',
+          audioFilePath: r'G:\audio\A0002.wav',
+          videoStartMs: 2000,
+          videoEndMs: 4000,
+          audioSourceInMs: 500,
+          audioSourceOutMs: 2500,
+          offsetMs: 1500,
+        ),
+      ],
+    );
+
+    await ExportService.exportXmeml([timeline], outputPath);
+    final document = XmlDocument.parse(await File(outputPath).readAsString());
+    final tracks = document
+        .findAllElements('sequence')
+        .first
+        .findElements('media')
+        .first
+        .findElements('audio')
+        .first
+        .findElements('track')
+        .toList();
+    final externalTrack = tracks.last;
+
+    expect(externalTrack.findElements('clipitem').length, 2);
+  });
+
+  test('fcpxml exports multiple external audio elements for segmented audio',
+      () async {
+    final outputPath = p.join(tempDir.path, 'timeline-multi.fcpxml');
+    final timeline = _buildTimelineData(
+      videoHasEmbeddedAudio: false,
+      segments: const [
+        TimelineAudioSegment(
+          segmentIndex: 0,
+          audioFileId: 'audio-1',
+          audioFileName: 'A0001.wav',
+          audioFilePath: r'G:\audio\A0001.wav',
+          videoStartMs: 0,
+          videoEndMs: 2000,
+          audioSourceInMs: 1000,
+          audioSourceOutMs: 3000,
+          offsetMs: 1000,
+        ),
+        TimelineAudioSegment(
+          segmentIndex: 1,
+          audioFileId: 'audio-2',
+          audioFileName: 'A0002.wav',
+          audioFilePath: r'G:\audio\A0002.wav',
+          videoStartMs: 2000,
+          videoEndMs: 4000,
+          audioSourceInMs: 500,
+          audioSourceOutMs: 2500,
+          offsetMs: 1500,
+        ),
+      ],
+    );
+
+    await ExportService.exportFcpxml([timeline], outputPath);
+    final document = XmlDocument.parse(await File(outputPath).readAsString());
+    final audioElements = document.findAllElements('sequence').first.findElements('audio').toList();
+
+    expect(audioElements.length, 2);
+    expect(
+      audioElements.map((item) => item.getAttribute('ref')),
+      containsAll(['a_audio-1', 'a_audio-2']),
+    );
+  });
 }
 
 TimelineData _buildTimelineData({
@@ -260,6 +350,7 @@ TimelineData _buildTimelineData({
   int audioOriginalDurationMs = 0,
   int audioTrimStartMs = 0,
   int audioTrimEndMs = 0,
+  List<TimelineAudioSegment> segments = const [],
 }) {
   return TimelineData(
     syncResultId: 'sync-1',
@@ -279,5 +370,6 @@ TimelineData _buildTimelineData({
     confidence: 0.92,
     status: '已通过',
     method: 'subtitleOnly',
+    segments: segments,
   );
 }

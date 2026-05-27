@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:xml/xml.dart';
 
 import '../models/timeline_data.dart';
+import '../models/timeline_audio_segment.dart';
 
 enum ExportPreset {
   compact('精简版'),
@@ -121,18 +122,19 @@ class ExportService {
                 addedAssets.add(timeline.videoFileId);
               }
 
-              final audioFileId = timeline.audioFileId;
-              if (audioFileId != null &&
-                  timeline.effectiveAudioPath.isNotEmpty &&
-                  !addedAssets.contains(audioFileId)) {
+              for (final segment in _externalSegments(timeline)) {
+                if (segment.audioFilePath.isEmpty ||
+                    addedAssets.contains(segment.audioFileId)) {
+                  continue;
+                }
                 builder.element(
                   'asset',
                   nest: () {
-                    builder.attribute('id', 'a_$audioFileId');
-                    builder.attribute('name', timeline.audioFileName);
+                    builder.attribute('id', 'a_${segment.audioFileId}');
+                    builder.attribute('name', segment.audioFileName);
                     builder.attribute(
                       'src',
-                      _toFileUri(timeline.effectiveAudioPath),
+                      _toFileUri(segment.audioFilePath),
                     );
                     builder.attribute('hasVideo', '0');
                     builder.attribute('hasAudio', '1');
@@ -145,13 +147,13 @@ class ExportService {
                         builder.attribute('kind', 'original-media');
                         builder.attribute(
                           'src',
-                          _toFileUri(timeline.effectiveAudioPath),
+                          _toFileUri(segment.audioFilePath),
                         );
                       },
                     );
                   },
                 );
-                addedAssets.add(audioFileId);
+                addedAssets.add(segment.audioFileId);
               }
             }
           },
@@ -283,45 +285,42 @@ class ExportService {
                         }
 
                         for (final timeline in timelineList) {
-                          if (!_hasExternalAudio(timeline)) {
-                            continue;
-                          }
-                          final audioStartFrame =
-                              videoPositions[timeline.videoFileId]! +
-                              _msToFrames(timeline.offsetMs);
-                          final audioDurFrames = _msToFrames(
-                            timeline.audioDurationMs,
-                          );
+                          for (final segment in _externalSegments(timeline)) {
+                            final audioStartFrame =
+                                videoPositions[timeline.videoFileId]! +
+                                _msToFrames(segment.videoStartMs);
+                            final audioDurFrames = _msToFrames(
+                              segment.videoDurationMs,
+                            );
 
-                          builder.element(
-                            'audio',
-                            nest: () {
-                              builder.attribute(
-                                'ref',
-                                'a_${timeline.audioFileId}',
-                              );
-                              builder.attribute('name', timeline.audioFileName);
-                              builder.attribute(
-                                'offset',
-                                _framesToTimecode(audioStartFrame),
-                              );
-                              builder.attribute(
-                                'duration',
-                                _framesToTimecode(audioDurFrames),
-                              );
-                              builder.attribute(
-                                'start',
-                                _framesToTimecode(
-                                  _msToFrames(
-                                    timeline.effectiveAudioSourceInMs,
+                            builder.element(
+                              'audio',
+                              nest: () {
+                                builder.attribute(
+                                  'ref',
+                                  'a_${segment.audioFileId}',
+                                );
+                                builder.attribute('name', segment.audioFileName);
+                                builder.attribute(
+                                  'offset',
+                                  _framesToTimecode(audioStartFrame),
+                                );
+                                builder.attribute(
+                                  'duration',
+                                  _framesToTimecode(audioDurFrames),
+                                );
+                                builder.attribute(
+                                  'start',
+                                  _framesToTimecode(
+                                    _msToFrames(segment.audioSourceInMs),
                                   ),
-                                ),
-                              );
-                              builder.attribute('lane', '-2');
-                              builder.attribute('srcCh', '1,2');
-                              builder.attribute('outCh', 'L,R');
-                            },
-                          );
+                                );
+                                builder.attribute('lane', '-2');
+                                builder.attribute('srcCh', '1,2');
+                                builder.attribute('outCh', 'L,R');
+                              },
+                            );
+                          }
                         }
                       },
                     );
@@ -360,10 +359,10 @@ class ExportService {
     final embeddedAudioClipIds =
         <String, String>{}; // videoFileId -> audio clip id
     final externalAudioClipIds =
-        <String, String>{}; // videoFileId -> audio clip id
+        <String, String>{}; // videoFileId_segmentIndex -> audio clip id
     final videoFileIds = <String, String>{}; // videoFileId -> file id
     final externalAudioFileIds =
-        <String, String>{}; // videoFileId -> audio file id
+        <String, String>{}; // audioFileId -> audio file id
 
     for (final t in timelineList) {
       final base = _safeId(t.videoFileName);
@@ -375,12 +374,16 @@ class ExportService {
         embeddedAudioClipIds[t.videoFileId] = '$base $idSeq';
         idSeq++;
       }
-      if (_hasExternalAudio(t)) {
-        externalAudioClipIds[t.videoFileId] = '$base $idSeq';
+      for (final segment in _externalSegments(t)) {
+        final key = _segmentKey(t.videoFileId, segment.segmentIndex);
+        externalAudioClipIds[key] = '$base $idSeq';
         idSeq++;
-        final aBase = _safeId(t.audioFileName);
-        externalAudioFileIds[t.videoFileId] = '$aBase $idSeq';
-        idSeq++;
+        externalAudioFileIds.putIfAbsent(segment.audioFileId, () {
+          final aBase = _safeId(segment.audioFileName);
+          final id = '$aBase $idSeq';
+          idSeq++;
+          return id;
+        });
       }
     }
 
@@ -427,7 +430,8 @@ class ExportService {
       final clipId = videoClipIds[t.videoFileId]!;
       final fileId = videoFileIds[t.videoFileId]!;
       final embeddedAudioClipId = embeddedAudioClipIds[t.videoFileId];
-      final externalAudioClipId = externalAudioClipIds[t.videoFileId];
+      final externalSegments = _externalSegments(t);
+      final externalAudioClipIdCount = externalSegments.length;
 
       buf.writeln('          <clipitem id="$clipId">');
       buf.writeln('            <name>${_xmlEscape(t.videoFileName)}</name>');
@@ -483,12 +487,16 @@ class ExportService {
         );
         buf.writeln('            </link>');
       }
-      if (externalAudioClipId != null) {
-        buf.writeln('            <link>');
-        buf.writeln(
-          '              <linkclipref>$externalAudioClipId</linkclipref>',
-        );
-        buf.writeln('            </link>');
+      if (externalAudioClipIdCount > 0) {
+        for (final segment in externalSegments) {
+          final externalAudioClipId =
+              externalAudioClipIds[_segmentKey(t.videoFileId, segment.segmentIndex)]!;
+          buf.writeln('            <link>');
+          buf.writeln(
+            '              <linkclipref>$externalAudioClipId</linkclipref>',
+          );
+          buf.writeln('            </link>');
+        }
       }
       if (preset == ExportPreset.review) {
         buf.writeln('            <marker>');
@@ -577,66 +585,67 @@ class ExportService {
         if (!_hasExternalAudio(t)) {
           continue;
         }
-        final startFrame =
-            videoPositions[t.videoFileId]! + _msToFrames(t.offsetMs);
-        final durFrames = _msToFrames(t.audioDurationMs);
-        final endFrame = startFrame + durFrames;
-        final audioClipId = externalAudioClipIds[t.videoFileId]!;
-        final videoClipId = videoClipIds[t.videoFileId]!;
-        final audioFileId = externalAudioFileIds[t.videoFileId]!;
-        final sourceInFrames = _msToFrames(t.effectiveAudioSourceInMs);
-        final sourceOutFrames = sourceInFrames + durFrames;
-        final sourceDurationFrames = _msToFrames(
-          t.effectiveAudioFileDurationMs,
-        );
+        for (final segment in _externalSegments(t)) {
+          final startFrame =
+              videoPositions[t.videoFileId]! + _msToFrames(segment.videoStartMs);
+          final durFrames = _msToFrames(segment.videoDurationMs);
+          final endFrame = startFrame + durFrames;
+          final audioClipId =
+              externalAudioClipIds[_segmentKey(t.videoFileId, segment.segmentIndex)]!;
+          final videoClipId = videoClipIds[t.videoFileId]!;
+          final audioFileId = externalAudioFileIds[segment.audioFileId]!;
+          final sourceInFrames = _msToFrames(segment.audioSourceInMs);
+          final sourceOutFrames = sourceInFrames + durFrames;
+          final sourceDurationFrames = _msToFrames(segment.audioDurationMs);
 
-        buf.writeln('          <clipitem id="$audioClipId">');
-        buf.writeln('            <name>${_xmlEscape(t.audioFileName)}</name>');
-        buf.writeln('            <duration>$durFrames</duration>');
-        buf.writeln('            <rate>');
-        buf.writeln('              <timebase>$_fps</timebase>');
-        buf.writeln('              <ntsc>FALSE</ntsc>');
-        buf.writeln('            </rate>');
-        buf.writeln('            <start>$startFrame</start>');
-        buf.writeln('            <end>$endFrame</end>');
-        buf.writeln('            <enabled>TRUE</enabled>');
-        buf.writeln('            <in>$sourceInFrames</in>');
-        buf.writeln('            <out>$sourceOutFrames</out>');
-        buf.writeln('            <file id="$audioFileId">');
-        buf.writeln('              <duration>$sourceDurationFrames</duration>');
-        buf.writeln('              <rate>');
-        buf.writeln('                <timebase>$_fps</timebase>');
-        buf.writeln('                <ntsc>FALSE</ntsc>');
-        buf.writeln('              </rate>');
-        buf.writeln(
-          '              <name>${_xmlEscape(t.audioFileName)}</name>',
-        );
-        buf.writeln(
-          '              <pathurl>${_toFileUri(t.effectiveAudioPath)}</pathurl>',
-        );
-        buf.writeln('              <media>');
-        buf.writeln('                <audio>');
-        buf.writeln('                  <samplecharacteristics>');
-        buf.writeln('                    <depth>16</depth>');
-        buf.writeln('                    <samplerate>48000</samplerate>');
-        buf.writeln('                  </samplecharacteristics>');
-        buf.writeln('                  <channelcount>2</channelcount>');
-        buf.writeln('                </audio>');
-        buf.writeln('              </media>');
-        buf.writeln('            </file>');
-        buf.writeln('            <sourcetrack>');
-        buf.writeln('              <mediatype>audio</mediatype>');
-        buf.writeln('              <trackindex>1</trackindex>');
-        buf.writeln('            </sourcetrack>');
-        buf.writeln('            <link>');
-        buf.writeln('              <linkclipref>$videoClipId</linkclipref>');
-        buf.writeln('              <mediatype>video</mediatype>');
-        buf.writeln('            </link>');
-        buf.writeln('            <link>');
-        buf.writeln('              <linkclipref>$audioClipId</linkclipref>');
-        buf.writeln('            </link>');
-        buf.writeln('            <comments/>');
-        buf.writeln('          </clipitem>');
+          buf.writeln('          <clipitem id="$audioClipId">');
+          buf.writeln('            <name>${_xmlEscape(segment.audioFileName)}</name>');
+          buf.writeln('            <duration>$durFrames</duration>');
+          buf.writeln('            <rate>');
+          buf.writeln('              <timebase>$_fps</timebase>');
+          buf.writeln('              <ntsc>FALSE</ntsc>');
+          buf.writeln('            </rate>');
+          buf.writeln('            <start>$startFrame</start>');
+          buf.writeln('            <end>$endFrame</end>');
+          buf.writeln('            <enabled>TRUE</enabled>');
+          buf.writeln('            <in>$sourceInFrames</in>');
+          buf.writeln('            <out>$sourceOutFrames</out>');
+          buf.writeln('            <file id="$audioFileId">');
+          buf.writeln('              <duration>$sourceDurationFrames</duration>');
+          buf.writeln('              <rate>');
+          buf.writeln('                <timebase>$_fps</timebase>');
+          buf.writeln('                <ntsc>FALSE</ntsc>');
+          buf.writeln('              </rate>');
+          buf.writeln(
+            '              <name>${_xmlEscape(segment.audioFileName)}</name>',
+          );
+          buf.writeln(
+            '              <pathurl>${_toFileUri(segment.audioFilePath)}</pathurl>',
+          );
+          buf.writeln('              <media>');
+          buf.writeln('                <audio>');
+          buf.writeln('                  <samplecharacteristics>');
+          buf.writeln('                    <depth>16</depth>');
+          buf.writeln('                    <samplerate>48000</samplerate>');
+          buf.writeln('                  </samplecharacteristics>');
+          buf.writeln('                  <channelcount>2</channelcount>');
+          buf.writeln('                </audio>');
+          buf.writeln('              </media>');
+          buf.writeln('            </file>');
+          buf.writeln('            <sourcetrack>');
+          buf.writeln('              <mediatype>audio</mediatype>');
+          buf.writeln('              <trackindex>1</trackindex>');
+          buf.writeln('            </sourcetrack>');
+          buf.writeln('            <link>');
+          buf.writeln('              <linkclipref>$videoClipId</linkclipref>');
+          buf.writeln('              <mediatype>video</mediatype>');
+          buf.writeln('            </link>');
+          buf.writeln('            <link>');
+          buf.writeln('              <linkclipref>$audioClipId</linkclipref>');
+          buf.writeln('            </link>');
+          buf.writeln('            <comments/>');
+          buf.writeln('          </clipitem>');
+        }
       }
 
       buf.writeln('          <enabled>TRUE</enabled>');
@@ -662,7 +671,7 @@ class ExportService {
     if (timeline.markerText.isNotEmpty) {
       return timeline.markerText;
     }
-    return '${timeline.status} ${(timeline.confidence * 100).toStringAsFixed(0)}%';
+    return '${timeline.status} ${(timeline.confidence * 100).toStringAsFixed(0)}% | segments=${timeline.segmentCount}';
   }
 
   static bool _hasEmbeddedAudio(TimelineData timeline) {
@@ -670,9 +679,9 @@ class ExportService {
   }
 
   static bool _hasExternalAudio(TimelineData timeline) {
-    return timeline.audioFileId != null &&
-        timeline.effectiveAudioPath.isNotEmpty &&
-        timeline.audioDurationMs > 0;
+    return _externalSegments(timeline).any(
+      (segment) => segment.audioFilePath.isNotEmpty && segment.audioDurationMs > 0,
+    );
   }
 
   /// XML 特殊字符转义
@@ -713,7 +722,7 @@ class ExportService {
   ) async {
     final buffer = StringBuffer();
     buffer.writeln(
-      'video_file,audio_file,confidence,status,method,source_in_ms,source_out_ms,anchors,needs_review,review_status,reviewed_at_ms,marker',
+      'video_file,audio_file,confidence,status,method,source_in_ms,source_out_ms,anchors,needs_review,review_status,reviewed_at_ms,segment_count,segment_files,coarse_offset_ms,final_offset_ms,offset_mad_ms,alignment_coverage,switch_count,source_clamped_reason,marker',
     );
     for (final timeline in timelineList) {
       buffer.writeln(
@@ -729,6 +738,14 @@ class ExportService {
           timeline.needsReview ? '1' : '0',
           _csvCell(timeline.reviewStatus.name),
           '${timeline.reviewedAtMs ?? ''}',
+          '${_externalSegments(timeline).length}',
+          _csvCell(_externalSegments(timeline).map((item) => item.audioFileName).join(' | ')),
+          '${timeline.coarseOffsetMs}',
+          '${timeline.finalOffsetMs}',
+          timeline.offsetMadMs.toStringAsFixed(2),
+          timeline.alignmentCoverage.toStringAsFixed(4),
+          '${timeline.switchCount}',
+          _csvCell(timeline.sourceClampedReason ?? ''),
           _csvCell(timeline.markerText),
         ].join(','),
       );
@@ -791,5 +808,34 @@ class ExportService {
 
   static String _csvCell(String value) {
     return '"${value.replaceAll('"', '""')}"';
+  }
+
+  static String _segmentKey(String videoFileId, int segmentIndex) {
+    return '${videoFileId}_$segmentIndex';
+  }
+
+  static List<TimelineAudioSegment> _externalSegments(TimelineData timeline) {
+    if (timeline.segments.isNotEmpty) {
+      return timeline.segments;
+    }
+    if (timeline.audioFileId == null ||
+        timeline.effectiveAudioPath.isEmpty ||
+        timeline.audioDurationMs <= 0) {
+      return const [];
+    }
+    final videoStartMs = timeline.offsetMs < 0 ? 0 : timeline.offsetMs;
+    return [
+      TimelineAudioSegment(
+        segmentIndex: 0,
+        audioFileId: timeline.audioFileId!,
+        audioFileName: timeline.audioFileName,
+        audioFilePath: timeline.effectiveAudioPath,
+        videoStartMs: videoStartMs,
+        videoEndMs: videoStartMs + timeline.audioDurationMs,
+        audioSourceInMs: timeline.effectiveAudioSourceInMs,
+        audioSourceOutMs: timeline.effectiveAudioSourceOutMs,
+        offsetMs: timeline.offsetMs,
+      ),
+    ];
   }
 }

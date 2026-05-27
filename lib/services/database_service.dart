@@ -13,6 +13,7 @@ import '../models/source_layout_item.dart';
 import '../models/subtitle_clip.dart';
 import '../models/subtitle_file.dart';
 import '../models/subtitle_window.dart';
+import '../models/sync_audio_segment.dart';
 import '../models/sync_review_detail.dart';
 import '../models/sync_result.dart';
 import 'app_data_service.dart';
@@ -69,6 +70,7 @@ class DatabaseService {
     await _createSubtitleWindowsTable(db);
     await _createMatchCandidatesTable(db);
     await _createSyncResultsTable(db);
+    await _createSyncAudioSegmentsTable(db);
     await _createAnchorPairsTable(db);
     await _createTimelineItemsTable(db);
     await _createIndexes(db);
@@ -90,6 +92,9 @@ class DatabaseService {
     }
     if (oldVersion < 5) {
       await _migrateToV5(db);
+    }
+    if (oldVersion < 6) {
+      await _migrateToV6(db);
     }
   }
 
@@ -275,6 +280,12 @@ class DatabaseService {
         source_clamped INTEGER NOT NULL DEFAULT 0,
         audio_too_short INTEGER NOT NULL DEFAULT 0,
         timeline_offset_ms INTEGER NOT NULL DEFAULT 0,
+        coarse_offset_ms INTEGER NOT NULL DEFAULT 0,
+        final_offset_ms INTEGER NOT NULL DEFAULT 0,
+        offset_mad_ms REAL NOT NULL DEFAULT 0,
+        alignment_coverage REAL NOT NULL DEFAULT 0,
+        switch_count INTEGER NOT NULL DEFAULT 0,
+        source_clamped_reason TEXT,
         needs_review INTEGER NOT NULL DEFAULT 0,
         review_status TEXT NOT NULL DEFAULT 'pending',
         reviewed_at_ms INTEGER,
@@ -283,6 +294,28 @@ class DatabaseService {
         created_at INTEGER NOT NULL,
         FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
         FOREIGN KEY (video_file_id) REFERENCES media_files(id) ON DELETE CASCADE,
+        FOREIGN KEY (audio_file_id) REFERENCES media_files(id) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  static Future<void> _createSyncAudioSegmentsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sync_audio_segments (
+        id TEXT PRIMARY KEY,
+        sync_result_id TEXT NOT NULL,
+        segment_index INTEGER NOT NULL,
+        audio_file_id TEXT NOT NULL,
+        video_start_ms INTEGER NOT NULL,
+        video_end_ms INTEGER NOT NULL,
+        audio_source_in_ms INTEGER NOT NULL,
+        audio_source_out_ms INTEGER NOT NULL,
+        offset_ms INTEGER NOT NULL DEFAULT 0,
+        anchor_count INTEGER NOT NULL DEFAULT 0,
+        confidence REAL NOT NULL DEFAULT 0,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (sync_result_id) REFERENCES sync_results(id) ON DELETE CASCADE,
         FOREIGN KEY (audio_file_id) REFERENCES media_files(id) ON DELETE CASCADE
       )
     ''');
@@ -355,6 +388,9 @@ class DatabaseService {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_sync_project ON sync_results(project_id, timeline_start_ms)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sync_segment_result ON sync_audio_segments(sync_result_id, segment_index)',
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_anchor_sync ON anchor_pairs(sync_result_id)',
@@ -436,6 +472,39 @@ class DatabaseService {
     );
   }
 
+  static Future<void> _migrateToV6(Database db) async {
+    await _safeAddColumn(
+      db,
+      'sync_results',
+      'coarse_offset_ms INTEGER NOT NULL DEFAULT 0',
+    );
+    await _safeAddColumn(
+      db,
+      'sync_results',
+      'final_offset_ms INTEGER NOT NULL DEFAULT 0',
+    );
+    await _safeAddColumn(
+      db,
+      'sync_results',
+      'offset_mad_ms REAL NOT NULL DEFAULT 0',
+    );
+    await _safeAddColumn(
+      db,
+      'sync_results',
+      'alignment_coverage REAL NOT NULL DEFAULT 0',
+    );
+    await _safeAddColumn(
+      db,
+      'sync_results',
+      'switch_count INTEGER NOT NULL DEFAULT 0',
+    );
+    await _safeAddColumn(db, 'sync_results', 'source_clamped_reason TEXT');
+    await _createSyncAudioSegmentsTable(db);
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sync_segment_result ON sync_audio_segments(sync_result_id, segment_index)',
+    );
+  }
+
   static Future<void> _migrateSubtitleClipsTable(Database db) async {
     await db.execute('ALTER TABLE subtitle_clips RENAME TO subtitle_clips_old');
     await _createSubtitleClipsTable(db);
@@ -514,6 +583,48 @@ class DatabaseService {
         'timeline_offset_ms INTEGER NOT NULL DEFAULT 0',
       );
     }
+    if (!columnNames.contains('coarse_offset_ms')) {
+      await _safeAddColumn(
+        db,
+        'sync_results',
+        'coarse_offset_ms INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    if (!columnNames.contains('final_offset_ms')) {
+      await _safeAddColumn(
+        db,
+        'sync_results',
+        'final_offset_ms INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    if (!columnNames.contains('offset_mad_ms')) {
+      await _safeAddColumn(
+        db,
+        'sync_results',
+        'offset_mad_ms REAL NOT NULL DEFAULT 0',
+      );
+    }
+    if (!columnNames.contains('alignment_coverage')) {
+      await _safeAddColumn(
+        db,
+        'sync_results',
+        'alignment_coverage REAL NOT NULL DEFAULT 0',
+      );
+    }
+    if (!columnNames.contains('switch_count')) {
+      await _safeAddColumn(
+        db,
+        'sync_results',
+        'switch_count INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    if (!columnNames.contains('source_clamped_reason')) {
+      await _safeAddColumn(db, 'sync_results', 'source_clamped_reason TEXT');
+    }
+    await _createSyncAudioSegmentsTable(db);
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sync_segment_result ON sync_audio_segments(sync_result_id, segment_index)',
+    );
 
     await db.execute('''
       UPDATE sync_results
@@ -687,14 +798,16 @@ class DatabaseService {
     final maps = await database.query(
       'subtitle_files',
       where:
-          'project_id = ? AND media_type = ? AND source_type = ? AND status != ?',
+          'project_id = ? AND media_type = ? AND source_type IN (?, ?) AND status != ?',
       whereArgs: [
         projectId,
         MediaType.audio.name,
         SubtitleSourceType.aggregate.name,
+        SubtitleSourceType.generatedAggregate.name,
         SubtitleFileStatus.failed.name,
       ],
-      orderBy: 'created_at ASC, file_path COLLATE NOCASE ASC',
+      orderBy:
+          "CASE source_type WHEN '${SubtitleSourceType.aggregate.name}' THEN 0 ELSE 1 END, created_at ASC, file_path COLLATE NOCASE ASC",
       limit: 1,
     );
     if (maps.isEmpty) return null;
@@ -952,6 +1065,33 @@ class DatabaseService {
     await batch.commit(noResult: true);
   }
 
+  static Future<void> replaceSyncAudioSegments(
+    String projectId,
+    List<SyncAudioSegment> segments,
+  ) async {
+    final syncIds = await database.query(
+      'sync_results',
+      columns: ['id'],
+      where: 'project_id = ?',
+      whereArgs: [projectId],
+    );
+    final ids = syncIds.map((row) => row['id'] as String).toList();
+    if (ids.isNotEmpty) {
+      final placeholders = List.filled(ids.length, '?').join(',');
+      await database.delete(
+        'sync_audio_segments',
+        where: 'sync_result_id IN ($placeholders)',
+        whereArgs: ids,
+      );
+    }
+    if (segments.isEmpty) return;
+    final batch = database.batch();
+    for (final segment in segments) {
+      batch.insert('sync_audio_segments', segment.toMap());
+    }
+    await batch.commit(noResult: true);
+  }
+
   static Future<List<SyncResult>> getSyncResults(String projectId) async {
     final maps = await database.query(
       'sync_results',
@@ -981,10 +1121,33 @@ class DatabaseService {
     );
   }
 
+  static Future<void> putSyncResult(SyncResult result) async {
+    final existing = await getSyncResultById(result.id);
+    if (existing == null) {
+      await database.insert('sync_results', result.toMap());
+      return;
+    }
+    await updateSyncResult(result);
+  }
+
   static Future<void> deleteAnchorPairs(String syncResultId) async {
     await database.delete(
       'anchor_pairs',
       where: 'sync_result_id = ?',
+      whereArgs: [syncResultId],
+    );
+  }
+
+  static Future<void> deleteSyncResultById(String syncResultId) async {
+    await database.delete(
+      'sync_audio_segments',
+      where: 'sync_result_id = ?',
+      whereArgs: [syncResultId],
+    );
+    await deleteAnchorPairs(syncResultId);
+    await database.delete(
+      'sync_results',
+      where: 'id = ?',
       whereArgs: [syncResultId],
     );
   }
@@ -999,6 +1162,11 @@ class DatabaseService {
     final ids = syncIds.map((row) => row['id'] as String).toList();
     if (ids.isNotEmpty) {
       final placeholders = List.filled(ids.length, '?').join(',');
+      await database.delete(
+        'sync_audio_segments',
+        where: 'sync_result_id IN ($placeholders)',
+        whereArgs: ids,
+      );
       await database.delete(
         'anchor_pairs',
         where: 'sync_result_id IN ($placeholders)',
@@ -1056,6 +1224,7 @@ class DatabaseService {
         ? const <SubtitleClip>[]
         : await getGlobalSubtitleClips(aggregateAudioSubtitleFile.id);
     final anchorPairs = await getAnchorPairs(syncResultId);
+    final segments = await getSyncAudioSegments(syncResultId);
 
     return SyncReviewDetail(
       syncResult: syncResult,
@@ -1067,7 +1236,37 @@ class DatabaseService {
       aggregateAudioSubtitleFile: aggregateAudioSubtitleFile,
       aggregateAudioSubtitles: aggregateAudioSubtitles,
       anchorPairs: anchorPairs,
+      segments: segments,
     );
+  }
+
+  static Future<List<SyncAudioSegment>> getSyncAudioSegments(
+    String syncResultId,
+  ) async {
+    final maps = await database.query(
+      'sync_audio_segments',
+      where: 'sync_result_id = ?',
+      whereArgs: [syncResultId],
+      orderBy: 'segment_index ASC, created_at ASC',
+    );
+    return maps.map((m) => SyncAudioSegment.fromMap(m)).toList();
+  }
+
+  static Future<void> replaceSyncAudioSegmentsForResult(
+    String syncResultId,
+    List<SyncAudioSegment> segments,
+  ) async {
+    await database.delete(
+      'sync_audio_segments',
+      where: 'sync_result_id = ?',
+      whereArgs: [syncResultId],
+    );
+    if (segments.isEmpty) return;
+    final batch = database.batch();
+    for (final segment in segments) {
+      batch.insert('sync_audio_segments', segment.toMap());
+    }
+    await batch.commit(noResult: true);
   }
 
   // ========== MatchPair CRUD（保留旧流程兼容） ==========

@@ -2,6 +2,7 @@ import 'anchor_pair.dart';
 import 'media_file.dart';
 import 'subtitle_clip.dart';
 import 'subtitle_file.dart';
+import 'sync_audio_segment.dart';
 import 'sync_result.dart';
 
 class SyncReviewDetail {
@@ -14,6 +15,7 @@ class SyncReviewDetail {
   final SubtitleFile? aggregateAudioSubtitleFile;
   final List<SubtitleClip> aggregateAudioSubtitles;
   final List<AnchorPair> anchorPairs;
+  final List<SyncAudioSegment> segments;
 
   const SyncReviewDetail({
     required this.syncResult,
@@ -25,5 +27,6 @@ class SyncReviewDetail {
     required this.aggregateAudioSubtitleFile,
     required this.aggregateAudioSubtitles,
     required this.anchorPairs,
+    this.segments = const [],
   });
 }
