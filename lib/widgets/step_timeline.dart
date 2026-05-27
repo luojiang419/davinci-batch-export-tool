@@ -244,7 +244,7 @@ class _StepTimelineState extends ConsumerState<StepTimeline> {
     final outputPath = '$dir\\$baseName';
     await ref
         .read(timelineProvider.notifier)
-        .exportXml(outputPath, preset: preset);
+        .exportXml(widget.projectId, outputPath, preset: preset);
   }
 
   Future<String?> _promptXmlExportBaseName({

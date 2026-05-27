@@ -23,6 +23,7 @@ class ExportService {
   ExportService._();
 
   static const _fps = 24;
+  static const _premiereTicksPerSecond = 254016000000;
 
   static String sanitizeExportBaseName(
     String rawName, {
@@ -132,10 +133,7 @@ class ExportService {
                   nest: () {
                     builder.attribute('id', 'a_${segment.audioFileId}');
                     builder.attribute('name', segment.audioFileName);
-                    builder.attribute(
-                      'src',
-                      _toFileUri(segment.audioFilePath),
-                    );
+                    builder.attribute('src', _toFileUri(segment.audioFilePath));
                     builder.attribute('hasVideo', '0');
                     builder.attribute('hasAudio', '1');
                     builder.attribute('audioSources', '1');
@@ -300,7 +298,10 @@ class ExportService {
                                   'ref',
                                   'a_${segment.audioFileId}',
                                 );
-                                builder.attribute('name', segment.audioFileName);
+                                builder.attribute(
+                                  'name',
+                                  segment.audioFileName,
+                                );
                                 builder.attribute(
                                   'offset',
                                   _framesToTimecode(audioStartFrame),
@@ -360,12 +361,17 @@ class ExportService {
         <String, String>{}; // videoFileId -> audio clip id
     final externalAudioClipIds =
         <String, String>{}; // videoFileId_segmentIndex -> audio clip id
+    final videoMasterClipIds =
+        <String, String>{}; // videoFileId -> master clip id
+    final externalAudioMasterClipIds =
+        <String, String>{}; // audioFileId -> master clip id
     final videoFileIds = <String, String>{}; // videoFileId -> file id
     final externalAudioFileIds =
         <String, String>{}; // audioFileId -> audio file id
 
     for (final t in timelineList) {
       final base = _safeId(t.videoFileName);
+      videoMasterClipIds[t.videoFileId] = 'masterclip-${idSeq++}';
       videoClipIds[t.videoFileId] = '$base $idSeq';
       idSeq++;
       videoFileIds[t.videoFileId] = '$base $idSeq';
@@ -376,6 +382,10 @@ class ExportService {
       }
       for (final segment in _externalSegments(t)) {
         final key = _segmentKey(t.videoFileId, segment.segmentIndex);
+        externalAudioMasterClipIds.putIfAbsent(
+          segment.audioFileId,
+          () => 'masterclip-${idSeq++}',
+        );
         externalAudioClipIds[key] = '$base $idSeq';
         idSeq++;
         externalAudioFileIds.putIfAbsent(segment.audioFileId, () {
@@ -429,11 +439,13 @@ class ExportService {
       final endFrame = startFrame + durFrames;
       final clipId = videoClipIds[t.videoFileId]!;
       final fileId = videoFileIds[t.videoFileId]!;
+      final masterClipId = videoMasterClipIds[t.videoFileId]!;
       final embeddedAudioClipId = embeddedAudioClipIds[t.videoFileId];
       final externalSegments = _externalSegments(t);
       final externalAudioClipIdCount = externalSegments.length;
 
       buf.writeln('          <clipitem id="$clipId">');
+      buf.writeln('            <masterclipid>$masterClipId</masterclipid>');
       buf.writeln('            <name>${_xmlEscape(t.videoFileName)}</name>');
       buf.writeln('            <duration>$durFrames</duration>');
       buf.writeln('            <rate>');
@@ -445,6 +457,10 @@ class ExportService {
       buf.writeln('            <enabled>TRUE</enabled>');
       buf.writeln('            <in>0</in>');
       buf.writeln('            <out>$durFrames</out>');
+      buf.writeln('            <pproTicksIn>0</pproTicksIn>');
+      buf.writeln(
+        '            <pproTicksOut>${_framesToPremiereTicks(durFrames)}</pproTicksOut>',
+      );
       buf.writeln('            <file id="$fileId">');
       buf.writeln('              <duration>$durFrames</duration>');
       buf.writeln('              <rate>');
@@ -490,7 +506,10 @@ class ExportService {
       if (externalAudioClipIdCount > 0) {
         for (final segment in externalSegments) {
           final externalAudioClipId =
-              externalAudioClipIds[_segmentKey(t.videoFileId, segment.segmentIndex)]!;
+              externalAudioClipIds[_segmentKey(
+                t.videoFileId,
+                segment.segmentIndex,
+              )]!;
           buf.writeln('            <link>');
           buf.writeln(
             '              <linkclipref>$externalAudioClipId</linkclipref>',
@@ -542,10 +561,12 @@ class ExportService {
         final audioClipId = embeddedAudioClipIds[t.videoFileId]!;
         final videoClipId = videoClipIds[t.videoFileId]!;
         final videoFileId = videoFileIds[t.videoFileId]!;
+        final masterClipId = videoMasterClipIds[t.videoFileId]!;
         final sourceInFrames = _msToFrames(t.videoStartMs);
         final sourceOutFrames = sourceInFrames + durFrames;
 
         buf.writeln('          <clipitem id="$audioClipId">');
+        buf.writeln('            <masterclipid>$masterClipId</masterclipid>');
         buf.writeln('            <name>${_xmlEscape(t.videoFileName)}</name>');
         buf.writeln('            <duration>$durFrames</duration>');
         buf.writeln('            <rate>');
@@ -557,6 +578,12 @@ class ExportService {
         buf.writeln('            <enabled>TRUE</enabled>');
         buf.writeln('            <in>$sourceInFrames</in>');
         buf.writeln('            <out>$sourceOutFrames</out>');
+        buf.writeln(
+          '            <pproTicksIn>${_framesToPremiereTicks(sourceInFrames)}</pproTicksIn>',
+        );
+        buf.writeln(
+          '            <pproTicksOut>${_framesToPremiereTicks(sourceOutFrames)}</pproTicksOut>',
+        );
         buf.writeln('            <file id="$videoFileId"/>');
         buf.writeln('            <sourcetrack>');
         buf.writeln('              <mediatype>audio</mediatype>');
@@ -588,19 +615,27 @@ class ExportService {
         }
         for (final segment in _externalSegments(t)) {
           final startFrame =
-              videoPositions[t.videoFileId]! + _msToFrames(segment.videoStartMs);
+              videoPositions[t.videoFileId]! +
+              _msToFrames(segment.videoStartMs);
           final durFrames = _msToFrames(segment.videoDurationMs);
           final endFrame = startFrame + durFrames;
           final audioClipId =
-              externalAudioClipIds[_segmentKey(t.videoFileId, segment.segmentIndex)]!;
+              externalAudioClipIds[_segmentKey(
+                t.videoFileId,
+                segment.segmentIndex,
+              )]!;
           final videoClipId = videoClipIds[t.videoFileId]!;
           final audioFileId = externalAudioFileIds[segment.audioFileId]!;
+          final masterClipId = externalAudioMasterClipIds[segment.audioFileId]!;
           final sourceInFrames = _msToFrames(segment.audioSourceInMs);
           final sourceOutFrames = _msToFrames(segment.audioSourceOutMs);
           final sourceDurationFrames = _msToFrames(segment.audioFileDurationMs);
 
           buf.writeln('          <clipitem id="$audioClipId">');
-          buf.writeln('            <name>${_xmlEscape(segment.audioFileName)}</name>');
+          buf.writeln('            <masterclipid>$masterClipId</masterclipid>');
+          buf.writeln(
+            '            <name>${_xmlEscape(segment.audioFileName)}</name>',
+          );
           buf.writeln('            <duration>$durFrames</duration>');
           buf.writeln('            <rate>');
           buf.writeln('              <timebase>$_fps</timebase>');
@@ -611,9 +646,17 @@ class ExportService {
           buf.writeln('            <enabled>TRUE</enabled>');
           buf.writeln('            <in>$sourceInFrames</in>');
           buf.writeln('            <out>$sourceOutFrames</out>');
+          buf.writeln(
+            '            <pproTicksIn>${_framesToPremiereTicks(sourceInFrames)}</pproTicksIn>',
+          );
+          buf.writeln(
+            '            <pproTicksOut>${_framesToPremiereTicks(sourceOutFrames)}</pproTicksOut>',
+          );
           if (declaredExternalAudioFiles.add(audioFileId)) {
             buf.writeln('            <file id="$audioFileId">');
-            buf.writeln('              <duration>$sourceDurationFrames</duration>');
+            buf.writeln(
+              '              <duration>$sourceDurationFrames</duration>',
+            );
             buf.writeln('              <rate>');
             buf.writeln('                <timebase>$_fps</timebase>');
             buf.writeln('                <ntsc>FALSE</ntsc>');
@@ -694,7 +737,8 @@ class ExportService {
 
   static bool _hasExternalAudio(TimelineData timeline) {
     return _externalSegments(timeline).any(
-      (segment) => segment.audioFilePath.isNotEmpty && segment.audioDurationMs > 0,
+      (segment) =>
+          segment.audioFilePath.isNotEmpty && segment.audioDurationMs > 0,
     );
   }
 
@@ -753,7 +797,11 @@ class ExportService {
           _csvCell(timeline.reviewStatus.name),
           '${timeline.reviewedAtMs ?? ''}',
           '${_externalSegments(timeline).length}',
-          _csvCell(_externalSegments(timeline).map((item) => item.audioFileName).join(' | ')),
+          _csvCell(
+            _externalSegments(
+              timeline,
+            ).map((item) => item.audioFileName).join(' | '),
+          ),
           '${timeline.coarseOffsetMs}',
           '${timeline.finalOffsetMs}',
           timeline.offsetMadMs.toStringAsFixed(2),
@@ -811,6 +859,13 @@ class ExportService {
     return '${frames * 100}/2400s';
   }
 
+  static String _framesToPremiereTicks(int frames) {
+    if (frames <= 0) return '0';
+    return ((BigInt.from(frames) * BigInt.from(_premiereTicksPerSecond)) ~/
+            BigInt.from(_fps))
+        .toString();
+  }
+
   /// SRT 时间格式化
   static String _formatSrtTime(int ms) {
     final h = (ms ~/ 3600000).toString().padLeft(2, '0');
@@ -838,7 +893,7 @@ class ExportService {
       return const [];
     }
     final videoStartMs = timeline.offsetMs < 0 ? 0 : timeline.offsetMs;
-      return [
+    return [
       TimelineAudioSegment(
         segmentIndex: 0,
         audioFileId: timeline.audioFileId!,

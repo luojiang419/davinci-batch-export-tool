@@ -122,34 +122,46 @@ class TimelineNotifier extends AsyncNotifier<TimelineState> {
   }
 
   Future<void> exportXml(
+    String projectId,
     String outputPath, {
     required ExportPreset preset,
   }) async {
-    final current = state.valueOrNull;
-    if (current == null || current.timelineList.isEmpty) return;
+    final current = state.valueOrNull ?? const TimelineState();
 
     state = AsyncData(current.copyWith(isExporting: true, error: null));
 
     try {
+      final timelineList = await AudioAlignService.buildTimeline(projectId);
+      if (timelineList.isEmpty) {
+        state = AsyncData(
+          current.copyWith(
+            isExporting: false,
+            timelineList: timelineList,
+            exportPath: null,
+          ),
+        );
+        return;
+      }
+
       final dir = p.dirname(outputPath);
       final baseName = p.basenameWithoutExtension(outputPath);
 
       final xmemlPath = p.join(dir, '$baseName.xml');
-      await ExportService.exportXmeml(
-        current.timelineList,
-        xmemlPath,
-        preset: preset,
-      );
+      await ExportService.exportXmeml(timelineList, xmemlPath, preset: preset);
 
       final fcpxmlPath = p.join(dir, '$baseName.fcpxml');
       await ExportService.exportFcpxml(
-        current.timelineList,
+        timelineList,
         fcpxmlPath,
         preset: preset,
       );
 
       state = AsyncData(
-        current.copyWith(isExporting: false, exportPath: xmemlPath),
+        current.copyWith(
+          isExporting: false,
+          timelineList: timelineList,
+          exportPath: xmemlPath,
+        ),
       );
     } catch (e) {
       state = AsyncData(
