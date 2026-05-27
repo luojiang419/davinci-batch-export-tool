@@ -95,7 +95,7 @@ class DatabaseService {
 
   static Future<void> _createProjectsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE projects (
+      CREATE TABLE IF NOT EXISTS projects (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         video_directory TEXT,
@@ -111,7 +111,7 @@ class DatabaseService {
 
   static Future<void> _createMediaFilesTable(Database db) async {
     await db.execute('''
-      CREATE TABLE media_files (
+      CREATE TABLE IF NOT EXISTS media_files (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         file_path TEXT NOT NULL,
@@ -138,7 +138,7 @@ class DatabaseService {
 
   static Future<void> _createSubtitleFilesTable(Database db) async {
     await db.execute('''
-      CREATE TABLE subtitle_files (
+      CREATE TABLE IF NOT EXISTS subtitle_files (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         file_path TEXT NOT NULL,
@@ -154,7 +154,7 @@ class DatabaseService {
 
   static Future<void> _createSubtitleClipsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE subtitle_clips (
+      CREATE TABLE IF NOT EXISTS subtitle_clips (
         id TEXT PRIMARY KEY,
         subtitle_file_id TEXT,
         media_file_id TEXT,
@@ -176,7 +176,7 @@ class DatabaseService {
 
   static Future<void> _createMatchPairsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE match_pairs (
+      CREATE TABLE IF NOT EXISTS match_pairs (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         video_file_id TEXT NOT NULL,
@@ -194,7 +194,7 @@ class DatabaseService {
 
   static Future<void> _createSourceLayoutsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE source_layouts (
+      CREATE TABLE IF NOT EXISTS source_layouts (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         media_id TEXT NOT NULL,
@@ -212,7 +212,7 @@ class DatabaseService {
 
   static Future<void> _createSubtitleWindowsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE subtitle_windows (
+      CREATE TABLE IF NOT EXISTS subtitle_windows (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         media_file_id TEXT NOT NULL,
@@ -233,7 +233,7 @@ class DatabaseService {
 
   static Future<void> _createMatchCandidatesTable(Database db) async {
     await db.execute('''
-      CREATE TABLE match_candidates (
+      CREATE TABLE IF NOT EXISTS match_candidates (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         video_file_id TEXT NOT NULL,
@@ -256,7 +256,7 @@ class DatabaseService {
 
   static Future<void> _createSyncResultsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE sync_results (
+      CREATE TABLE IF NOT EXISTS sync_results (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         video_file_id TEXT NOT NULL,
@@ -290,7 +290,7 @@ class DatabaseService {
 
   static Future<void> _createAnchorPairsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE anchor_pairs (
+      CREATE TABLE IF NOT EXISTS anchor_pairs (
         id TEXT PRIMARY KEY,
         sync_result_id TEXT NOT NULL,
         video_clip_id TEXT NOT NULL,
@@ -306,7 +306,7 @@ class DatabaseService {
 
   static Future<void> _createTimelineItemsTable(Database db) async {
     await db.execute('''
-      CREATE TABLE timeline_items (
+      CREATE TABLE IF NOT EXISTS timeline_items (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         track_id TEXT NOT NULL,

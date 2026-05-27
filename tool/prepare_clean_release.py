@@ -40,12 +40,24 @@ def _load_schema_sql(repo_root: Path) -> list[str]:
     return statements
 
 
+def _load_db_version(repo_root: Path) -> int:
+    source = (repo_root / "lib" / "core" / "constants.dart").read_text(
+        encoding="utf-8"
+    )
+    match = re.search(r"static const int dbVersion = (\d+);", source)
+    if match is None:
+        raise RuntimeError("未能从 constants.dart 解析数据库版本号")
+    return int(match.group(1))
+
+
 def _initialize_clean_database(db_path: Path, repo_root: Path) -> None:
+    db_version = _load_db_version(repo_root)
     conn = sqlite3.connect(db_path)
     try:
         conn.execute("PRAGMA foreign_keys = ON")
         for statement in _load_schema_sql(repo_root):
             conn.execute(statement)
+        conn.execute(f"PRAGMA user_version = {db_version}")
         conn.commit()
     finally:
         conn.close()
