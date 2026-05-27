@@ -580,6 +580,7 @@ class ExportService {
     final hasExternalTrack = timelineList.any(_hasExternalAudio);
     if (hasExternalTrack) {
       buf.writeln('        <track>');
+      final declaredExternalAudioFiles = <String>{};
 
       for (final t in timelineList) {
         if (!_hasExternalAudio(t)) {
@@ -595,8 +596,8 @@ class ExportService {
           final videoClipId = videoClipIds[t.videoFileId]!;
           final audioFileId = externalAudioFileIds[segment.audioFileId]!;
           final sourceInFrames = _msToFrames(segment.audioSourceInMs);
-          final sourceOutFrames = sourceInFrames + durFrames;
-          final sourceDurationFrames = _msToFrames(segment.audioDurationMs);
+          final sourceOutFrames = _msToFrames(segment.audioSourceOutMs);
+          final sourceDurationFrames = _msToFrames(segment.audioFileDurationMs);
 
           buf.writeln('          <clipitem id="$audioClipId">');
           buf.writeln('            <name>${_xmlEscape(segment.audioFileName)}</name>');
@@ -610,28 +611,41 @@ class ExportService {
           buf.writeln('            <enabled>TRUE</enabled>');
           buf.writeln('            <in>$sourceInFrames</in>');
           buf.writeln('            <out>$sourceOutFrames</out>');
-          buf.writeln('            <file id="$audioFileId">');
-          buf.writeln('              <duration>$sourceDurationFrames</duration>');
-          buf.writeln('              <rate>');
-          buf.writeln('                <timebase>$_fps</timebase>');
-          buf.writeln('                <ntsc>FALSE</ntsc>');
-          buf.writeln('              </rate>');
-          buf.writeln(
-            '              <name>${_xmlEscape(segment.audioFileName)}</name>',
-          );
-          buf.writeln(
-            '              <pathurl>${_toFileUri(segment.audioFilePath)}</pathurl>',
-          );
-          buf.writeln('              <media>');
-          buf.writeln('                <audio>');
-          buf.writeln('                  <samplecharacteristics>');
-          buf.writeln('                    <depth>16</depth>');
-          buf.writeln('                    <samplerate>48000</samplerate>');
-          buf.writeln('                  </samplecharacteristics>');
-          buf.writeln('                  <channelcount>2</channelcount>');
-          buf.writeln('                </audio>');
-          buf.writeln('              </media>');
-          buf.writeln('            </file>');
+          if (declaredExternalAudioFiles.add(audioFileId)) {
+            buf.writeln('            <file id="$audioFileId">');
+            buf.writeln('              <duration>$sourceDurationFrames</duration>');
+            buf.writeln('              <rate>');
+            buf.writeln('                <timebase>$_fps</timebase>');
+            buf.writeln('                <ntsc>FALSE</ntsc>');
+            buf.writeln('              </rate>');
+            buf.writeln(
+              '              <name>${_xmlEscape(segment.audioFileName)}</name>',
+            );
+            buf.writeln(
+              '              <pathurl>${_toFileUri(segment.audioFilePath)}</pathurl>',
+            );
+            buf.writeln('              <timecode>');
+            buf.writeln('                <string>00:00:00:00</string>');
+            buf.writeln('                <frame>0</frame>');
+            buf.writeln('                <displayformat>NDF</displayformat>');
+            buf.writeln('                <rate>');
+            buf.writeln('                  <timebase>$_fps</timebase>');
+            buf.writeln('                  <ntsc>FALSE</ntsc>');
+            buf.writeln('                </rate>');
+            buf.writeln('              </timecode>');
+            buf.writeln('              <media>');
+            buf.writeln('                <audio>');
+            buf.writeln('                  <samplecharacteristics>');
+            buf.writeln('                    <depth>16</depth>');
+            buf.writeln('                    <samplerate>48000</samplerate>');
+            buf.writeln('                  </samplecharacteristics>');
+            buf.writeln('                  <channelcount>2</channelcount>');
+            buf.writeln('                </audio>');
+            buf.writeln('              </media>');
+            buf.writeln('            </file>');
+          } else {
+            buf.writeln('            <file id="$audioFileId"/>');
+          }
           buf.writeln('            <sourcetrack>');
           buf.writeln('              <mediatype>audio</mediatype>');
           buf.writeln('              <trackindex>1</trackindex>');
@@ -824,12 +838,13 @@ class ExportService {
       return const [];
     }
     final videoStartMs = timeline.offsetMs < 0 ? 0 : timeline.offsetMs;
-    return [
+      return [
       TimelineAudioSegment(
         segmentIndex: 0,
         audioFileId: timeline.audioFileId!,
         audioFileName: timeline.audioFileName,
         audioFilePath: timeline.effectiveAudioPath,
+        audioFileDurationMs: timeline.effectiveAudioFileDurationMs,
         videoStartMs: videoStartMs,
         videoEndMs: videoStartMs + timeline.audioDurationMs,
         audioSourceInMs: timeline.effectiveAudioSourceInMs,

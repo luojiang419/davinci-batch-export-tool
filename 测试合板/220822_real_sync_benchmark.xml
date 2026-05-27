@@ -1004,13 +1004,22 @@
             <in>1315</in>
             <out>14014</out>
             <file id="ZOOM0036_LR_mp3 4">
-              <duration>12699</duration>
+              <duration>17247</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0036_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0036_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1047,13 +1056,22 @@
             <in>3708</in>
             <out>6042</out>
             <file id="ZOOM0026_LR_mp3 9">
-              <duration>2334</duration>
+              <duration>6042</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0026_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0026_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1090,13 +1108,22 @@
             <in>0</in>
             <out>1367</out>
             <file id="ZOOM0027_LR_mp3 11">
-              <duration>1367</duration>
+              <duration>6783</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0027_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0027_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1132,24 +1159,7 @@
             <enabled>TRUE</enabled>
             <in>1368</in>
             <out>4505</out>
-            <file id="ZOOM0027_LR_mp3 11">
-              <duration>3137</duration>
-              <rate>
-                <timebase>24</timebase>
-                <ntsc>FALSE</ntsc>
-              </rate>
-              <name>ZOOM0027_LR.mp3</name>
-              <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0027_LR.mp3</pathurl>
-              <media>
-                <audio>
-                  <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                  </samplecharacteristics>
-                  <channelcount>2</channelcount>
-                </audio>
-              </media>
-            </file>
+            <file id="ZOOM0027_LR_mp3 11"/>
             <sourcetrack>
               <mediatype>audio</mediatype>
               <trackindex>1</trackindex>
@@ -1175,24 +1185,7 @@
             <enabled>TRUE</enabled>
             <in>4504</in>
             <out>6783</out>
-            <file id="ZOOM0027_LR_mp3 11">
-              <duration>2279</duration>
-              <rate>
-                <timebase>24</timebase>
-                <ntsc>FALSE</ntsc>
-              </rate>
-              <name>ZOOM0027_LR.mp3</name>
-              <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0027_LR.mp3</pathurl>
-              <media>
-                <audio>
-                  <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                  </samplecharacteristics>
-                  <channelcount>2</channelcount>
-                </audio>
-              </media>
-            </file>
+            <file id="ZOOM0027_LR_mp3 11"/>
             <sourcetrack>
               <mediatype>audio</mediatype>
               <trackindex>1</trackindex>
@@ -1226,6 +1219,15 @@
               </rate>
               <name>ZOOM0028_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0028_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1262,13 +1264,22 @@
             <in>0</in>
             <out>2804</out>
             <file id="ZOOM0029_LR_mp3 23">
-              <duration>2804</duration>
+              <duration>5778</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0029_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0029_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1304,24 +1315,7 @@
             <enabled>TRUE</enabled>
             <in>2804</in>
             <out>5778</out>
-            <file id="ZOOM0029_LR_mp3 23">
-              <duration>2974</duration>
-              <rate>
-                <timebase>24</timebase>
-                <ntsc>FALSE</ntsc>
-              </rate>
-              <name>ZOOM0029_LR.mp3</name>
-              <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0029_LR.mp3</pathurl>
-              <media>
-                <audio>
-                  <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                  </samplecharacteristics>
-                  <channelcount>2</channelcount>
-                </audio>
-              </media>
-            </file>
+            <file id="ZOOM0029_LR_mp3 23"/>
             <sourcetrack>
               <mediatype>audio</mediatype>
               <trackindex>1</trackindex>
@@ -1348,13 +1342,22 @@
             <in>0</in>
             <out>548</out>
             <file id="ZOOM0030_LR_mp3 29">
-              <duration>548</duration>
+              <duration>9682</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0030_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0030_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1390,24 +1393,7 @@
             <enabled>TRUE</enabled>
             <in>548</in>
             <out>6760</out>
-            <file id="ZOOM0030_LR_mp3 29">
-              <duration>6212</duration>
-              <rate>
-                <timebase>24</timebase>
-                <ntsc>FALSE</ntsc>
-              </rate>
-              <name>ZOOM0030_LR.mp3</name>
-              <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0030_LR.mp3</pathurl>
-              <media>
-                <audio>
-                  <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                  </samplecharacteristics>
-                  <channelcount>2</channelcount>
-                </audio>
-              </media>
-            </file>
+            <file id="ZOOM0030_LR_mp3 29"/>
             <sourcetrack>
               <mediatype>audio</mediatype>
               <trackindex>1</trackindex>
@@ -1433,24 +1419,7 @@
             <enabled>TRUE</enabled>
             <in>6759</in>
             <out>9682</out>
-            <file id="ZOOM0030_LR_mp3 29">
-              <duration>2923</duration>
-              <rate>
-                <timebase>24</timebase>
-                <ntsc>FALSE</ntsc>
-              </rate>
-              <name>ZOOM0030_LR.mp3</name>
-              <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0030_LR.mp3</pathurl>
-              <media>
-                <audio>
-                  <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                  </samplecharacteristics>
-                  <channelcount>2</channelcount>
-                </audio>
-              </media>
-            </file>
+            <file id="ZOOM0030_LR_mp3 29"/>
             <sourcetrack>
               <mediatype>audio</mediatype>
               <trackindex>1</trackindex>
@@ -1484,6 +1453,15 @@
               </rate>
               <name>ZOOM0031_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0031_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1520,13 +1498,22 @@
             <in>0</in>
             <out>1740</out>
             <file id="ZOOM0032_LR_mp3 41">
-              <duration>1740</duration>
+              <duration>1741</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0032_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0032_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1561,15 +1548,24 @@
             <end>41118</end>
             <enabled>TRUE</enabled>
             <in>0</in>
-            <out>421</out>
+            <out>422</out>
             <file id="ZOOM0033_LR_mp3 43">
-              <duration>421</duration>
+              <duration>11482</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0033_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0033_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1604,25 +1600,8 @@
             <end>41552</end>
             <enabled>TRUE</enabled>
             <in>427</in>
-            <out>861</out>
-            <file id="ZOOM0033_LR_mp3 43">
-              <duration>434</duration>
-              <rate>
-                <timebase>24</timebase>
-                <ntsc>FALSE</ntsc>
-              </rate>
-              <name>ZOOM0033_LR.mp3</name>
-              <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0033_LR.mp3</pathurl>
-              <media>
-                <audio>
-                  <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                  </samplecharacteristics>
-                  <channelcount>2</channelcount>
-                </audio>
-              </media>
-            </file>
+            <out>862</out>
+            <file id="ZOOM0033_LR_mp3 43"/>
             <sourcetrack>
               <mediatype>audio</mediatype>
               <trackindex>1</trackindex>
@@ -1648,24 +1627,7 @@
             <enabled>TRUE</enabled>
             <in>855</in>
             <out>11482</out>
-            <file id="ZOOM0033_LR_mp3 43">
-              <duration>10627</duration>
-              <rate>
-                <timebase>24</timebase>
-                <ntsc>FALSE</ntsc>
-              </rate>
-              <name>ZOOM0033_LR.mp3</name>
-              <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0033_LR.mp3</pathurl>
-              <media>
-                <audio>
-                  <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                  </samplecharacteristics>
-                  <channelcount>2</channelcount>
-                </audio>
-              </media>
-            </file>
+            <file id="ZOOM0033_LR_mp3 43"/>
             <sourcetrack>
               <mediatype>audio</mediatype>
               <trackindex>1</trackindex>
@@ -1692,13 +1654,22 @@
             <in>0</in>
             <out>14143</out>
             <file id="ZOOM0034_LR_mp3 53">
-              <duration>14143</duration>
+              <duration>19811</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0034_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0034_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1735,13 +1706,22 @@
             <in>16349</in>
             <out>22477</out>
             <file id="ZOOM0025_LR_mp3 58">
-              <duration>6128</duration>
+              <duration>28849</duration>
               <rate>
                 <timebase>24</timebase>
                 <ntsc>FALSE</ntsc>
               </rate>
               <name>ZOOM0025_LR.mp3</name>
               <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0025_LR.mp3</pathurl>
+              <timecode>
+                <string>00:00:00:00</string>
+                <frame>0</frame>
+                <displayformat>NDF</displayformat>
+                <rate>
+                  <timebase>24</timebase>
+                  <ntsc>FALSE</ntsc>
+                </rate>
+              </timecode>
               <media>
                 <audio>
                   <samplecharacteristics>
@@ -1776,25 +1756,8 @@
             <end>80032</end>
             <enabled>TRUE</enabled>
             <in>13063</in>
-            <out>20644</out>
-            <file id="ZOOM0025_LR_mp3 58">
-              <duration>7581</duration>
-              <rate>
-                <timebase>24</timebase>
-                <ntsc>FALSE</ntsc>
-              </rate>
-              <name>ZOOM0025_LR.mp3</name>
-              <pathurl>file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0025_LR.mp3</pathurl>
-              <media>
-                <audio>
-                  <samplecharacteristics>
-                    <depth>16</depth>
-                    <samplerate>48000</samplerate>
-                  </samplecharacteristics>
-                  <channelcount>2</channelcount>
-                </audio>
-              </media>
-            </file>
+            <out>20645</out>
+            <file id="ZOOM0025_LR_mp3 58"/>
             <sourcetrack>
               <mediatype>audio</mediatype>
               <trackindex>1</trackindex>

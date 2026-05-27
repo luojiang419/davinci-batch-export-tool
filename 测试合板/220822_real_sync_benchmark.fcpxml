@@ -2,70 +2,70 @@
 <fcpxml version="1.8">
   <resources>
     <format id="f_video" name="FFVideoFormat1080p24" frameDuration="100/2400s" width="1920" height="1080"/>
-    <asset id="a_3aa2a3fe-eb2b-434f-897e-d375f4ccdf5d" name="C0449.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0449.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_8beb9a5e-7828-4b97-8194-16f4e7c79c11" name="C0449.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0449.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0449.mp4"/>
     </asset>
-    <asset id="a_1bbb62c4-1544-47e3-b96e-a538c53ee60e" name="ZOOM0036_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0036_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_aa86a401-2994-43b1-8020-207674d1c007" name="ZOOM0036_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0036_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0036_LR.mp3"/>
     </asset>
-    <asset id="a_175907d4-2566-410f-a3c2-fd59dba0d92d" name="C0450.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0450.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_4af12351-218e-4877-b24b-17ccf450ea10" name="C0450.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0450.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0450.mp4"/>
     </asset>
-    <asset id="a_fc315a22-205e-4c81-9d97-77685c1051ae" name="ZOOM0026_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0026_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_9e52722a-104a-4a80-90d6-6b44183e8148" name="ZOOM0026_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0026_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0026_LR.mp3"/>
     </asset>
-    <asset id="a_786b95e5-1acf-47eb-8b69-ab2399474053" name="ZOOM0027_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0027_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_83e9cf9a-da00-4fb7-b16d-2e5984ff0411" name="ZOOM0027_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0027_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0027_LR.mp3"/>
     </asset>
-    <asset id="a_6adb7be7-1f45-4ce6-9956-8ec32ad21070" name="C0451.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0451.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_1682cf8f-f7be-404b-b6c7-045a532baa4f" name="C0451.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0451.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0451.mp4"/>
     </asset>
-    <asset id="a_6022785f-0754-42c5-b01c-2d2246f80e57" name="C0452.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0452.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_a39d5ade-cee7-4a7a-a4de-7176e59595ea" name="C0452.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0452.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0452.mp4"/>
     </asset>
-    <asset id="a_a20e9cce-17be-4f51-b884-d8f47cb23afa" name="ZOOM0028_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0028_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_40868dea-ae59-4446-bae5-0dce304a99e7" name="ZOOM0028_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0028_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0028_LR.mp3"/>
     </asset>
-    <asset id="a_cb58fce9-31cb-456d-9986-0d3aa0623e5c" name="ZOOM0029_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0029_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_b8680623-20d1-4975-aa83-43a2909c329e" name="ZOOM0029_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0029_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0029_LR.mp3"/>
     </asset>
-    <asset id="a_2a5388a9-0678-44db-92b4-ac96faf60e9f" name="C0453.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0453.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_f8d0fda9-e039-402c-bcb0-d00d3032e7cd" name="C0453.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0453.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0453.mp4"/>
     </asset>
-    <asset id="a_77c507d5-aaf5-44d0-8852-ae74b2523a7e" name="ZOOM0030_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0030_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_b12be17f-d8ad-4b95-b104-be11e41b7314" name="ZOOM0030_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0030_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0030_LR.mp3"/>
     </asset>
-    <asset id="a_28f82138-7fbb-48a3-ae37-8b2915620c80" name="C0454.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0454.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_c2d428e4-b419-42cc-82e0-3b20e5dfdbd9" name="C0454.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0454.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0454.mp4"/>
     </asset>
-    <asset id="a_119bfb73-6894-44fe-961f-d0442ab11e67" name="C0455.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0455.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_a19a5239-11f6-4ae8-a5b6-8f58b934edd0" name="C0455.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0455.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0455.mp4"/>
     </asset>
-    <asset id="a_76d0f65c-493c-4a24-9599-4df3b2c57f96" name="ZOOM0031_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0031_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_2c8db5c3-5b0e-4c70-9267-b1e8095921c3" name="ZOOM0031_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0031_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0031_LR.mp3"/>
     </asset>
-    <asset id="a_c05eb2bf-eaad-4826-b526-76d78f171ce1" name="ZOOM0032_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0032_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_64a9a988-473d-4a26-b84c-0933bb275ec6" name="ZOOM0032_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0032_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0032_LR.mp3"/>
     </asset>
-    <asset id="a_499104b6-c605-458b-92c1-2c83cdfd8f4f" name="ZOOM0033_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0033_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_89f3a601-fb9f-4ebb-8b60-963c8bfef1e9" name="ZOOM0033_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0033_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0033_LR.mp3"/>
     </asset>
-    <asset id="a_439001c3-6c6b-465f-beeb-9d687c617364" name="C0456.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0456.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_2466a39f-03a6-4a6f-8c48-ec71555cab60" name="C0456.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0456.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0456.mp4"/>
     </asset>
-    <asset id="a_76757606-0d56-4247-b658-c0988fbcaf0e" name="C0457.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0457.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_d02fc301-4db0-4358-9258-d888c357eb3e" name="C0457.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0457.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0457.mp4"/>
     </asset>
-    <asset id="a_997c5242-523f-4d09-af6f-27827abca4b8" name="ZOOM0034_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0034_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_6f3d0b88-1ce2-4ec7-aa0c-fbb26cbd29bc" name="ZOOM0034_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0034_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0034_LR.mp3"/>
     </asset>
-    <asset id="a_561a1007-07c4-46fa-bf4d-82cce0d9adab" name="C0458.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0458.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_22a627eb-0390-4aa6-86d6-79c929bb2720" name="C0458.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0458.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0458.mp4"/>
     </asset>
-    <asset id="a_7c1c82a3-cf20-486c-bf1e-9804a2b5a1de" name="ZOOM0025_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0025_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_6d0c19b9-7c01-4b44-943d-2fbe4783f1ad" name="ZOOM0025_LR.mp3" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0025_LR.mp3" hasVideo="0" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/2_Audio/220822yinpin/ZOOM0025_LR.mp3"/>
     </asset>
-    <asset id="a_47e615b7-e2e7-4602-9948-90f37fd28c70" name="C0459.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0459.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
+    <asset id="a_b8c792f3-38f2-4fd0-97c5-6216079dc982" name="C0459.mp4" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0459.mp4" hasVideo="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000">
       <media-rep kind="original-media" src="file://localhost/G%3a/data/260224-%e5%85%83%e6%95%b0%e6%8d%ae%e8%84%9a%e6%9c%ac%e6%b5%8b%e8%af%95/1_Video/220822shipin/C0459.mp4"/>
     </asset>
   </resources>
@@ -74,70 +74,70 @@
       <project name="ASR Timeline">
         <sequence format="f_video" duration="8003200/2400s" tcStart="0s" tcFormat="NDF">
           <spine>
-            <asset-clip ref="a_3aa2a3fe-eb2b-434f-897e-d375f4ccdf5d" name="C0449.mp4" offset="0/2400s" duration="1269900/2400s" start="0/2400s">
+            <asset-clip ref="a_8beb9a5e-7828-4b97-8194-16f4e7c79c11" name="C0449.mp4" offset="0/2400s" duration="1269900/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 79% | ZOOM0036_LR.mp3 | 00:00:54 - 00:09:43 | anchors=91 | segments=1"/>
             </asset-clip>
-            <asset-clip ref="a_175907d4-2566-410f-a3c2-fd59dba0d92d" name="C0450.mp4" offset="1269900/2400s" duration="370100/2400s" start="0/2400s">
+            <asset-clip ref="a_4af12351-218e-4877-b24b-17ccf450ea10" name="C0450.mp4" offset="1269900/2400s" duration="370100/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="音频过短 68% | ZOOM0026_LR.mp3 | 00:02:34 - 00:04:11 | anchors=22 | segments=2"/>
             </asset-clip>
-            <asset-clip ref="a_6adb7be7-1f45-4ce6-9956-8ec32ad21070" name="C0451.mp4" offset="1640000/2400s" duration="313700/2400s" start="0/2400s">
+            <asset-clip ref="a_1682cf8f-f7be-404b-b6c7-045a532baa4f" name="C0451.mp4" offset="1640000/2400s" duration="313700/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 78% | ZOOM0027_LR.mp3 | 00:00:56 - 00:03:07 | anchors=46 | segments=1"/>
             </asset-clip>
-            <asset-clip ref="a_6022785f-0754-42c5-b01c-2d2246f80e57" name="C0452.mp4" offset="1953700/2400s" duration="515500/2400s" start="0/2400s">
+            <asset-clip ref="a_a39d5ade-cee7-4a7a-a4de-7176e59595ea" name="C0452.mp4" offset="1953700/2400s" duration="515500/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 77% | ZOOM0029_LR.mp3 | 00:03:07 - 00:04:42 | anchors=67 | segments=3"/>
             </asset-clip>
-            <asset-clip ref="a_2a5388a9-0678-44db-92b4-ac96faf60e9f" name="C0453.mp4" offset="2469200/2400s" duration="352200/2400s" start="0/2400s">
+            <asset-clip ref="a_f8d0fda9-e039-402c-bcb0-d00d3032e7cd" name="C0453.mp4" offset="2469200/2400s" duration="352200/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 79% | ZOOM0029_LR.mp3 | 00:01:56 - 00:04:00 | anchors=41 | segments=2"/>
             </asset-clip>
-            <asset-clip ref="a_28f82138-7fbb-48a3-ae37-8b2915620c80" name="C0454.mp4" offset="2821400/2400s" duration="621200/2400s" start="0/2400s">
+            <asset-clip ref="a_c2d428e4-b419-42cc-82e0-3b20e5dfdbd9" name="C0454.mp4" offset="2821400/2400s" duration="621200/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 76% | ZOOM0030_LR.mp3 | 00:00:22 - 00:04:41 | anchors=92 | segments=1"/>
             </asset-clip>
-            <asset-clip ref="a_119bfb73-6894-44fe-961f-d0442ab11e67" name="C0455.mp4" offset="3442600/2400s" duration="669200/2400s" start="0/2400s">
+            <asset-clip ref="a_a19a5239-11f6-4ae8-a5b6-8f58b934edd0" name="C0455.mp4" offset="3442600/2400s" duration="669200/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 77% | ZOOM0030_LR.mp3 | 00:04:41 - 00:06:43 | anchors=92 | segments=4"/>
             </asset-clip>
-            <asset-clip ref="a_439001c3-6c6b-465f-beeb-9d687c617364" name="C0456.mp4" offset="4111800/2400s" duration="43400/2400s" start="0/2400s">
+            <asset-clip ref="a_2466a39f-03a6-4a6f-8c48-ec71555cab60" name="C0456.mp4" offset="4111800/2400s" duration="43400/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 89% | ZOOM0033_LR.mp3 | 00:00:17 - 00:00:35 | anchors=5 | segments=1"/>
             </asset-clip>
-            <asset-clip ref="a_76757606-0d56-4247-b658-c0988fbcaf0e" name="C0457.mp4" offset="4155200/2400s" duration="2477100/2400s" start="0/2400s">
+            <asset-clip ref="a_d02fc301-4db0-4358-9258-d888c357eb3e" name="C0457.mp4" offset="4155200/2400s" duration="2477100/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 76% | ZOOM0034_LR.mp3 | 00:00:35 - 00:07:58 | anchors=176 | segments=2"/>
             </asset-clip>
-            <asset-clip ref="a_561a1007-07c4-46fa-bf4d-82cce0d9adab" name="C0458.mp4" offset="6632300/2400s" duration="612800/2400s" start="0/2400s">
+            <asset-clip ref="a_22a627eb-0390-4aa6-86d6-79c929bb2720" name="C0458.mp4" offset="6632300/2400s" duration="612800/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 78% | ZOOM0025_LR.mp3 | 00:11:21 - 00:15:36 | anchors=6 | segments=1"/>
             </asset-clip>
-            <asset-clip ref="a_47e615b7-e2e7-4602-9948-90f37fd28c70" name="C0459.mp4" offset="7245100/2400s" duration="758100/2400s" start="0/2400s">
+            <asset-clip ref="a_b8c792f3-38f2-4fd0-97c5-6216079dc982" name="C0459.mp4" offset="7245100/2400s" duration="758100/2400s" start="0/2400s">
               <marker start="0s" duration="0s" value="中置信度 79% | ZOOM0025_LR.mp3 | 00:09:04 - 00:14:20 | anchors=22 | segments=1"/>
             </asset-clip>
           </spine>
-          <audio ref="a_3aa2a3fe-eb2b-434f-897e-d375f4ccdf5d" name="C0449.mp4" offset="0/2400s" duration="1269900/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_175907d4-2566-410f-a3c2-fd59dba0d92d" name="C0450.mp4" offset="1269900/2400s" duration="370100/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_6adb7be7-1f45-4ce6-9956-8ec32ad21070" name="C0451.mp4" offset="1640000/2400s" duration="313700/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_6022785f-0754-42c5-b01c-2d2246f80e57" name="C0452.mp4" offset="1953700/2400s" duration="515500/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_2a5388a9-0678-44db-92b4-ac96faf60e9f" name="C0453.mp4" offset="2469200/2400s" duration="352200/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_28f82138-7fbb-48a3-ae37-8b2915620c80" name="C0454.mp4" offset="2821400/2400s" duration="621200/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_119bfb73-6894-44fe-961f-d0442ab11e67" name="C0455.mp4" offset="3442600/2400s" duration="669200/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_439001c3-6c6b-465f-beeb-9d687c617364" name="C0456.mp4" offset="4111800/2400s" duration="43400/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_76757606-0d56-4247-b658-c0988fbcaf0e" name="C0457.mp4" offset="4155200/2400s" duration="2477100/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_561a1007-07c4-46fa-bf4d-82cce0d9adab" name="C0458.mp4" offset="6632300/2400s" duration="612800/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_47e615b7-e2e7-4602-9948-90f37fd28c70" name="C0459.mp4" offset="7245100/2400s" duration="758100/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_1bbb62c4-1544-47e3-b96e-a538c53ee60e" name="ZOOM0036_LR.mp3" offset="0/2400s" duration="1269900/2400s" start="131500/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_fc315a22-205e-4c81-9d97-77685c1051ae" name="ZOOM0026_LR.mp3" offset="1269900/2400s" duration="233400/2400s" start="370800/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_786b95e5-1acf-47eb-8b69-ab2399474053" name="ZOOM0027_LR.mp3" offset="1503300/2400s" duration="136700/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_786b95e5-1acf-47eb-8b69-ab2399474053" name="ZOOM0027_LR.mp3" offset="1640000/2400s" duration="313700/2400s" start="136800/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_786b95e5-1acf-47eb-8b69-ab2399474053" name="ZOOM0027_LR.mp3" offset="1953700/2400s" duration="227900/2400s" start="450400/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_a20e9cce-17be-4f51-b884-d8f47cb23afa" name="ZOOM0028_LR.mp3" offset="2181600/2400s" duration="7200/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_cb58fce9-31cb-456d-9986-0d3aa0623e5c" name="ZOOM0029_LR.mp3" offset="2188800/2400s" duration="280400/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_cb58fce9-31cb-456d-9986-0d3aa0623e5c" name="ZOOM0029_LR.mp3" offset="2469200/2400s" duration="297400/2400s" start="280400/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_77c507d5-aaf5-44d0-8852-ae74b2523a7e" name="ZOOM0030_LR.mp3" offset="2766600/2400s" duration="54800/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_77c507d5-aaf5-44d0-8852-ae74b2523a7e" name="ZOOM0030_LR.mp3" offset="2821400/2400s" duration="621200/2400s" start="54800/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_77c507d5-aaf5-44d0-8852-ae74b2523a7e" name="ZOOM0030_LR.mp3" offset="3442600/2400s" duration="292300/2400s" start="675900/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_76d0f65c-493c-4a24-9599-4df3b2c57f96" name="ZOOM0031_LR.mp3" offset="3734900/2400s" duration="160800/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_c05eb2bf-eaad-4826-b526-76d78f171ce1" name="ZOOM0032_LR.mp3" offset="3895700/2400s" duration="174000/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_499104b6-c605-458b-92c1-2c83cdfd8f4f" name="ZOOM0033_LR.mp3" offset="4069700/2400s" duration="42100/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_499104b6-c605-458b-92c1-2c83cdfd8f4f" name="ZOOM0033_LR.mp3" offset="4111800/2400s" duration="43400/2400s" start="42700/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_499104b6-c605-458b-92c1-2c83cdfd8f4f" name="ZOOM0033_LR.mp3" offset="4155200/2400s" duration="1062700/2400s" start="85500/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_997c5242-523f-4d09-af6f-27827abca4b8" name="ZOOM0034_LR.mp3" offset="5217900/2400s" duration="1414300/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_7c1c82a3-cf20-486c-bf1e-9804a2b5a1de" name="ZOOM0025_LR.mp3" offset="6632300/2400s" duration="612800/2400s" start="1634900/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
-          <audio ref="a_7c1c82a3-cf20-486c-bf1e-9804a2b5a1de" name="ZOOM0025_LR.mp3" offset="7245100/2400s" duration="758100/2400s" start="1306300/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_8beb9a5e-7828-4b97-8194-16f4e7c79c11" name="C0449.mp4" offset="0/2400s" duration="1269900/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_4af12351-218e-4877-b24b-17ccf450ea10" name="C0450.mp4" offset="1269900/2400s" duration="370100/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_1682cf8f-f7be-404b-b6c7-045a532baa4f" name="C0451.mp4" offset="1640000/2400s" duration="313700/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_a39d5ade-cee7-4a7a-a4de-7176e59595ea" name="C0452.mp4" offset="1953700/2400s" duration="515500/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_f8d0fda9-e039-402c-bcb0-d00d3032e7cd" name="C0453.mp4" offset="2469200/2400s" duration="352200/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_c2d428e4-b419-42cc-82e0-3b20e5dfdbd9" name="C0454.mp4" offset="2821400/2400s" duration="621200/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_a19a5239-11f6-4ae8-a5b6-8f58b934edd0" name="C0455.mp4" offset="3442600/2400s" duration="669200/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_2466a39f-03a6-4a6f-8c48-ec71555cab60" name="C0456.mp4" offset="4111800/2400s" duration="43400/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_d02fc301-4db0-4358-9258-d888c357eb3e" name="C0457.mp4" offset="4155200/2400s" duration="2477100/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_22a627eb-0390-4aa6-86d6-79c929bb2720" name="C0458.mp4" offset="6632300/2400s" duration="612800/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_b8c792f3-38f2-4fd0-97c5-6216079dc982" name="C0459.mp4" offset="7245100/2400s" duration="758100/2400s" start="0s" lane="-1" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_aa86a401-2994-43b1-8020-207674d1c007" name="ZOOM0036_LR.mp3" offset="0/2400s" duration="1269900/2400s" start="131500/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_9e52722a-104a-4a80-90d6-6b44183e8148" name="ZOOM0026_LR.mp3" offset="1269900/2400s" duration="233400/2400s" start="370800/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_83e9cf9a-da00-4fb7-b16d-2e5984ff0411" name="ZOOM0027_LR.mp3" offset="1503300/2400s" duration="136700/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_83e9cf9a-da00-4fb7-b16d-2e5984ff0411" name="ZOOM0027_LR.mp3" offset="1640000/2400s" duration="313700/2400s" start="136800/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_83e9cf9a-da00-4fb7-b16d-2e5984ff0411" name="ZOOM0027_LR.mp3" offset="1953700/2400s" duration="227900/2400s" start="450400/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_40868dea-ae59-4446-bae5-0dce304a99e7" name="ZOOM0028_LR.mp3" offset="2181600/2400s" duration="7200/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_b8680623-20d1-4975-aa83-43a2909c329e" name="ZOOM0029_LR.mp3" offset="2188800/2400s" duration="280400/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_b8680623-20d1-4975-aa83-43a2909c329e" name="ZOOM0029_LR.mp3" offset="2469200/2400s" duration="297400/2400s" start="280400/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_b12be17f-d8ad-4b95-b104-be11e41b7314" name="ZOOM0030_LR.mp3" offset="2766600/2400s" duration="54800/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_b12be17f-d8ad-4b95-b104-be11e41b7314" name="ZOOM0030_LR.mp3" offset="2821400/2400s" duration="621200/2400s" start="54800/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_b12be17f-d8ad-4b95-b104-be11e41b7314" name="ZOOM0030_LR.mp3" offset="3442600/2400s" duration="292300/2400s" start="675900/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_2c8db5c3-5b0e-4c70-9267-b1e8095921c3" name="ZOOM0031_LR.mp3" offset="3734900/2400s" duration="160800/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_64a9a988-473d-4a26-b84c-0933bb275ec6" name="ZOOM0032_LR.mp3" offset="3895700/2400s" duration="174000/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_89f3a601-fb9f-4ebb-8b60-963c8bfef1e9" name="ZOOM0033_LR.mp3" offset="4069700/2400s" duration="42100/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_89f3a601-fb9f-4ebb-8b60-963c8bfef1e9" name="ZOOM0033_LR.mp3" offset="4111800/2400s" duration="43400/2400s" start="42700/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_89f3a601-fb9f-4ebb-8b60-963c8bfef1e9" name="ZOOM0033_LR.mp3" offset="4155200/2400s" duration="1062700/2400s" start="85500/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_6f3d0b88-1ce2-4ec7-aa0c-fbb26cbd29bc" name="ZOOM0034_LR.mp3" offset="5217900/2400s" duration="1414300/2400s" start="0/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_6d0c19b9-7c01-4b44-943d-2fbe4783f1ad" name="ZOOM0025_LR.mp3" offset="6632300/2400s" duration="612800/2400s" start="1634900/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
+          <audio ref="a_6d0c19b9-7c01-4b44-943d-2fbe4783f1ad" name="ZOOM0025_LR.mp3" offset="7245100/2400s" duration="758100/2400s" start="1306300/2400s" lane="-2" srcCh="1,2" outCh="L,R"/>
         </sequence>
       </project>
     </event>

@@ -128,6 +128,7 @@ class AudioAlignService {
           audioFileId: segment.audioFileId,
           audioFileName: _fileName(audioFile.filePath),
           audioFilePath: audioFile.filePath,
+          audioFileDurationMs: audioFile.durationMs ?? 0,
           videoStartMs: segment.videoStartMs,
           videoEndMs: segment.videoEndMs,
           audioSourceInMs: segment.audioSourceInMs,

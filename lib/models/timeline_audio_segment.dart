@@ -3,6 +3,7 @@ class TimelineAudioSegment {
   final String audioFileId;
   final String audioFileName;
   final String audioFilePath;
+  final int audioFileDurationMs;
   final int videoStartMs;
   final int videoEndMs;
   final int audioSourceInMs;
@@ -17,6 +18,7 @@ class TimelineAudioSegment {
     required this.audioFileId,
     required this.audioFileName,
     required this.audioFilePath,
+    this.audioFileDurationMs = 0,
     required this.videoStartMs,
     required this.videoEndMs,
     required this.audioSourceInMs,

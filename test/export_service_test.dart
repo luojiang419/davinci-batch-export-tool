@@ -116,6 +116,13 @@ void main() {
             .innerText,
         contains('A0001.wav'),
       );
+      expect(
+        externalClip.findElements('file').first.findElements('timecode').first
+            .findElements('string')
+            .first
+            .innerText,
+        '00:00:00:00',
+      );
     },
   );
 
@@ -299,6 +306,104 @@ void main() {
     expect(externalTrack.findElements('clipitem').length, 2);
   });
 
+  test('xmeml reuses shared audio file definition with full source duration',
+      () async {
+    final outputPath = p.join(tempDir.path, 'timeline-shared-audio.xml');
+    final sharedSegments = const [
+      TimelineAudioSegment(
+        segmentIndex: 0,
+        audioFileId: 'audio-1',
+        audioFileName: 'A0001.wav',
+        audioFilePath: r'G:\audio\A0001.wav',
+        audioFileDurationMs: 120000,
+        videoStartMs: 0,
+        videoEndMs: 2000,
+        audioSourceInMs: 40000,
+        audioSourceOutMs: 42000,
+        offsetMs: 40000,
+      ),
+    ];
+    final first = _buildTimelineData(
+      videoHasEmbeddedAudio: false,
+      segments: sharedSegments,
+    );
+    final second = TimelineData(
+      syncResultId: 'sync-2',
+      videoFileId: 'video-2',
+      videoFileName: 'C0002.mp4',
+      videoFilePath: r'G:\video\C0002.mp4',
+      videoEndMs: 3000,
+      timelineEndMs: 3000,
+      confidence: 0.9,
+      status: '已通过',
+      method: 'subtitleOnly',
+      segments: const [
+        TimelineAudioSegment(
+          segmentIndex: 0,
+          audioFileId: 'audio-1',
+          audioFileName: 'A0001.wav',
+          audioFilePath: r'G:\audio\A0001.wav',
+          audioFileDurationMs: 120000,
+          videoStartMs: 0,
+          videoEndMs: 3000,
+          audioSourceInMs: 80000,
+          audioSourceOutMs: 83000,
+          offsetMs: 80000,
+        ),
+      ],
+    );
+
+    await ExportService.exportXmeml([first, second], outputPath);
+    final document = XmlDocument.parse(await File(outputPath).readAsString());
+    final files = document
+        .findAllElements('clipitem')
+        .where((clip) => clip.findElements('sourcetrack').isNotEmpty)
+        .expand((clip) => clip.findElements('file'))
+        .where((file) => file.getAttribute('id') == 'A0001_wav 3')
+        .toList();
+
+    final fullDefinitions = files.where((file) => file.findElements('duration').isNotEmpty).toList();
+    expect(fullDefinitions, hasLength(1));
+    expect(
+      fullDefinitions.first.findElements('duration').first.innerText,
+      '2880',
+    );
+    final secondRef = files.last;
+    expect(secondRef.findElements('duration'), isEmpty);
+  });
+
+  test('xmeml external audio file duration always covers clip out', () async {
+    final outputPath = p.join(tempDir.path, 'timeline-source-duration.xml');
+    final timeline = _buildTimelineData(
+      videoHasEmbeddedAudio: false,
+      segments: const [
+        TimelineAudioSegment(
+          segmentIndex: 0,
+          audioFileId: 'audio-1',
+          audioFileName: 'A0001.wav',
+          audioFilePath: r'G:\audio\A0001.wav',
+          audioFileDurationMs: 1200000,
+          videoStartMs: 0,
+          videoEndMs: 4000,
+          audioSourceInMs: 681190,
+          audioSourceOutMs: 936529,
+          offsetMs: 2410919,
+        ),
+      ],
+    );
+
+    await ExportService.exportXmeml([timeline], outputPath);
+    final document = XmlDocument.parse(await File(outputPath).readAsString());
+    final clip = document
+        .findAllElements('clipitem')
+        .firstWhere((item) => item.findElements('sourcetrack').isNotEmpty);
+    final file = clip.findElements('file').first;
+    final duration = int.parse(file.findElements('duration').first.innerText);
+    final out = int.parse(clip.findElements('out').first.innerText);
+
+    expect(duration, greaterThanOrEqualTo(out));
+  });
+
   test('fcpxml exports multiple external audio elements for segmented audio',
       () async {
     final outputPath = p.join(tempDir.path, 'timeline-multi.fcpxml');
@@ -351,18 +456,23 @@ TimelineData _buildTimelineData({
   int audioTrimStartMs = 0,
   int audioTrimEndMs = 0,
   List<TimelineAudioSegment> segments = const [],
+  String videoFileId = 'video-1',
+  String videoFileName = 'C0001.mp4',
+  String videoFilePath = r'G:\video\C0001.mp4',
+  int videoEndMs = 4000,
+  int timelineEndMs = 4000,
 }) {
   return TimelineData(
     syncResultId: 'sync-1',
-    videoFileId: 'video-1',
+    videoFileId: videoFileId,
     audioFileId: audioFileId,
-    videoFileName: 'C0001.mp4',
+    videoFileName: videoFileName,
     audioFileName: audioFileName,
-    videoFilePath: r'G:\video\C0001.mp4',
+    videoFilePath: videoFilePath,
     audioFilePath: audioFilePath,
     videoHasEmbeddedAudio: videoHasEmbeddedAudio,
-    videoEndMs: 4000,
-    timelineEndMs: 4000,
+    videoEndMs: videoEndMs,
+    timelineEndMs: timelineEndMs,
     audioOriginalDurationMs: audioOriginalDurationMs,
     audioTrimStartMs: audioTrimStartMs,
     audioTrimEndMs: audioTrimEndMs,
