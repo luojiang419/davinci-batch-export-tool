@@ -80,8 +80,11 @@ def _get_resolve():
 def main():
     _log("=== BatchExport started ===")
 
-    # Setup path
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Setup path (Resolve doesn't set __file__)
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+    except NameError:
+        script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     _log(f"Script dir: {script_dir}")
     _log(f"sys.path: {sys.path[:3]}")
     if script_dir not in sys.path:
