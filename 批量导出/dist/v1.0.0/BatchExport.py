@@ -1,46 +1,64 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-r"""
-批量导出时间线 - DaVinci Resolve 19+ Fusion Script
+"""
+BatchExport - DaVinci Resolve 19+ Fusion Script
 
-安装: 放置到 Fusion\Scripts\Utility\ 目录
-使用: DaVinci Resolve > 工作区 > 脚本 > Utility > BatchExport
-
-依赖: DaVinci Resolve Studio 19+
+Install: Fusion\Scripts\Utility\
+Usage: Workspace > Scripts > Utility > BatchExport
 """
 import sys
 import os
+import traceback
+import datetime
+
+# ── Crash log ───────────────────────────────────────────────────────
+_LOG_FILE = os.path.join(os.environ.get("TEMP", "."), "BatchExport_crash.log")
 
 
-# ── Resolve API 路径检测 ──────────────────────────────────────────
+def _log(msg: str):
+    try:
+        with open(_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"[{datetime.datetime.now()}] {msg}\n")
+    except Exception:
+        pass
+
+
+def _show_error(msg: str):
+    _log(f"ERROR: {msg}")
+    try:
+        try:
+            from PySide2 import QtWidgets
+        except ImportError:
+            from PySide6 import QtWidgets
+        app = QtWidgets.QApplication.instance()
+        if app is None:
+            app = QtWidgets.QApplication(sys.argv)
+        QtWidgets.QMessageBox.critical(None, "BatchExport Error", msg)
+    except Exception as e:
+        _log(f"Failed to show error dialog: {e}")
+        print(f"ERROR: {msg}")
+
+
+# ── Resolve API ─────────────────────────────────────────────────────
 def _find_resolve_module():
-    """定位 DaVinciResolveScript 模块"""
-    # 环境变量优先
     env_path = os.environ.get("RESOLVE_SCRIPT_API", "")
-    if env_path and os.path.isdir(env_path):
-        modules_dir = os.path.join(env_path, "Modules")
-        if os.path.isdir(modules_dir):
-            return env_path
-
-    # 扫描常见安装路径
-    candidates = [
+    if env_path and os.path.isdir(os.path.join(env_path, "Modules")):
+        return env_path
+    for base in [
         os.path.join(os.environ.get("PROGRAMDATA", r"C:\ProgramData"),
                      r"Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting"),
         os.path.join(os.environ.get("APPDATA", ""),
                      r"Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting"),
-    ]
-    for path in candidates:
-        if os.path.isdir(os.path.join(path, "Modules")):
-            return path
+    ]:
+        if os.path.isdir(os.path.join(base, "Modules")):
+            return base
     return None
 
 
 def _get_resolve():
-    """获取 Resolve 实例"""
     api_path = _find_resolve_module()
     if api_path and api_path not in sys.path:
         sys.path.insert(0, api_path)
-
     try:
         import DaVinciResolveScript as dvr
         resolve = dvr.scriptapp("Resolve")
@@ -48,71 +66,71 @@ def _get_resolve():
             return resolve
     except ImportError:
         pass
-
-    # 尝试 Fusion 内置方式
     try:
-        import fusionscript as fscript
-        resolve = fscript.scriptapp("Resolve")
+        import fusionscript as fs
+        resolve = fs.scriptapp("Resolve")
         if resolve is not None:
             return resolve
     except ImportError:
         pass
-
-    print("错误: 无法连接 DaVinci Resolve，请确认 Resolve 正在运行")
     return None
 
 
-# ── 入口 ───────────────────────────────────────────────────────────
+# ── Main ─────────────────────────────────────────────────────────────
 def main():
-    # 确保脚本所在目录在路径中
+    _log("=== BatchExport started ===")
+
+    # Setup path
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    _log(f"Script dir: {script_dir}")
+    _log(f"sys.path: {sys.path[:3]}")
     if script_dir not in sys.path:
         sys.path.insert(0, script_dir)
 
-    # 尝试导入插件包
+    # Import plugin
     try:
         from batch_export_lib import GetUI
+        _log("Import OK")
     except Exception as e:
-        _show_error(f"插件导入失败:\n{script_dir}\\src\\\n\n{str(e)}")
-        return
-
-    # 连接 Resolve
-    resolve = _get_resolve()
-    if resolve is None:
+        _log(f"Import failed: {traceback.format_exc()}")
         _show_error(
-            "无法连接 DaVinci Resolve。\n\n请确认:\n"
-            "1. DaVinci Resolve 正在运行\n"
-            "2. 已打开一个项目\n"
-            "3. 偏好设置 > 系统 > 常规 > 外部脚本 = 本地"
+            "Failed to load plugin modules.\n\n"
+            f"Check log at: {_LOG_FILE}\n\n"
+            f"Error: {str(e)}"
         )
         return
 
-    # 显示面板
+    # Connect to Resolve
+    resolve = _get_resolve()
+    if resolve is None:
+        _log("Cannot connect to Resolve")
+        _show_error(
+            "Cannot connect to DaVinci Resolve.\n\n"
+            "Make sure:\n"
+            "1. Resolve is running\n"
+            "2. A project is open\n"
+            "3. Preferences > System > General > External Scripting = Local"
+        )
+        return
+    _log("Connected to Resolve OK")
+
+    # Create UI
     try:
         panel = GetUI(resolve)
-        panel.setWindowTitle("批量导出时间线")
+        panel.setWindowTitle("Batch Export Timelines")
         panel.resize(960, 640)
         panel.show()
+        _log("Panel shown OK")
         return panel
     except Exception as e:
-        _show_error(f"面板加载失败:\n{str(e)}")
-        import traceback
-        traceback.print_exc()
+        _log(f"Panel failed: {traceback.format_exc()}")
+        _show_error(f"Failed to load panel:\n\n{str(e)}")
+        return
 
 
-def _show_error(msg: str):
-    """显示错误对话框"""
-    try:
-        try:
-            from PySide2 import QtWidgets
-        except ImportError:
-            from PySide6 import QtWidgets
-        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-        QtWidgets.QMessageBox.critical(None, "批量导出插件 - 错误", msg)
-    except Exception:
-        print(f"ERROR: {msg}")
-
-
-# 支持直接运行
-if __name__ == "__main__":
+# ── Entry ────────────────────────────────────────────────────────────
+try:
     _panel = main()
+except Exception as e:
+    _log(f"Top-level crash: {traceback.format_exc()}")
+    _show_error(f"Unexpected error:\n\n{str(e)}")
