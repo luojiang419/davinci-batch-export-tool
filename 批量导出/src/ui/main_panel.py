@@ -301,6 +301,7 @@ class BatchExportPanel(QtWidgets.QWidget):
         self._browse_btn.clicked.connect(self._on_browse_output)
         self._export_btn.clicked.connect(self._on_start_export)
         self._cancel_btn.clicked.connect(self._on_cancel)
+        self._folder_tree.itemChanged.connect(self._on_tree_item_changed)
 
     # ── 信号处理 ──
 
@@ -320,6 +321,49 @@ class BatchExportPanel(QtWidgets.QWidget):
         if path:
             self._output_path_edit.setText(path)
 
+    def _on_tree_item_changed(self, item, column):
+        """文件夹勾选联动: 勾选/取消文件夹时同步所有子孙时间线"""
+        if column != 0:
+            return
+        self._folder_tree.blockSignals(True)
+        is_folder = item.data(0, QtCore.Qt.UserRole) == "folder"
+        state = item.checkState(0)
+        if is_folder:
+            self._set_children_check(item, state)
+        # 如果取消勾选子项, 更新父文件夹为部分选中或取消
+        self._update_parent_check(item.parent())
+        self._folder_tree.blockSignals(False)
+
+    def _set_children_check(self, parent, state):
+        """递归设置所有子孙项的勾选状态"""
+        for i in range(parent.childCount()):
+            child = parent.child(i)
+            if child.flags() & QtCore.Qt.ItemIsUserCheckable:
+                child.setCheckState(0, state)
+            self._set_children_check(child, state)
+
+    def _update_parent_check(self, parent):
+        """根据子项状态更新父项的勾选状态"""
+        if parent is None or parent is self._folder_tree.invisibleRootItem():
+            return
+        checked = 0
+        total = 0
+        for i in range(parent.childCount()):
+            child = parent.child(i)
+            if child.flags() & QtCore.Qt.ItemIsUserCheckable:
+                total += 1
+                if child.checkState(0) == QtCore.Qt.Checked:
+                    checked += 1
+        if total == 0:
+            parent.setCheckState(0, QtCore.Qt.Unchecked)
+        elif checked == total:
+            parent.setCheckState(0, QtCore.Qt.Checked)
+        elif checked == 0:
+            parent.setCheckState(0, QtCore.Qt.Unchecked)
+        else:
+            parent.setCheckState(0, QtCore.Qt.PartiallyChecked)
+        self._update_parent_check(parent.parent())
+
     def _on_start_export(self):
         """开始导出 (S5 实现核心逻辑)"""
         selected = self._get_selected_timelines()
@@ -336,7 +380,11 @@ class BatchExportPanel(QtWidgets.QWidget):
             )
             return
 
-        self._status_label.setText(f"准备导出 {len(selected)} 条时间线...")
+        names = [s["name"] for s in selected]
+        self._status_label.setText(
+            f"准备导出 {len(selected)} 条时间线: {', '.join(names[:3])}"
+            f"{'...' if len(names) > 3 else ''}"
+        )
 
     def _on_cancel(self):
         self._status_label.setText("已取消")
@@ -344,44 +392,80 @@ class BatchExportPanel(QtWidgets.QWidget):
             self._api.delete_all_render_jobs()
 
     def _get_selected_timelines(self) -> list:
-        """获取用户在树中勾选的时间线 (S2 完善)"""
+        """递归遍历树，获取所有勾选的时间线节点 (名称, 父文件夹名)"""
         selected = []
-        root = self._folder_tree.invisibleRootItem()
-        for i in range(root.childCount()):
-            item = root.child(i)
-            if item.checkState(0) == QtCore.Qt.Checked:
-                selected.append(item.text(0))
+        self._collect_checked(self._folder_tree.invisibleRootItem(), selected)
         return selected
+
+    def _collect_checked(self, parent_item, result: list):
+        """递归收集勾选的时间线"""
+        for i in range(parent_item.childCount()):
+            item = parent_item.child(i)
+            # 时间线项：列数为3 (名称/时长/帧率) 且有勾选框
+            if item.columnCount() == 3 and item.checkState(0) == QtCore.Qt.Checked:
+                folder_name = ""
+                p = item.parent()
+                if p and p is not self._folder_tree.invisibleRootItem():
+                    folder_name = p.text(0)
+                result.append({
+                    "name": item.text(0),
+                    "duration": item.text(1),
+                    "fps": item.text(2),
+                    "folder": folder_name,
+                })
+            # 递归处理子项
+            self._collect_checked(item, result)
 
     # ── 公开方法 ──
 
     def refresh_timelines(self):
-        """刷新时间线列表 (S2 实现具体逻辑)"""
+        """扫描媒体池并刷新时间线树"""
         self._folder_tree.clear()
-        if self._api.is_mock:
-            self._populate_mock_timelines()
 
-    def _populate_mock_timelines(self):
-        """Mock 数据填充 (开发阶段用)"""
-        from ..utils.resolve_api import _MockFolder
+        from ..core.timeline_scanner import scan_timelines
 
-        folders = _MockFolder("根目录").GetSubFolderList()
-        for folder in folders:
-            folder_item = QtWidgets.QTreeWidgetItem([folder.GetName()])
+        root_node = scan_timelines()
+        self._populate_tree(self._folder_tree.invisibleRootItem(), root_node)
+        self._status_label.setText(
+            f"已加载 {root_node.total_timeline_count} 条时间线"
+        )
+
+    def _populate_tree(self, parent_item, folder_node):
+        """将 FolderNode 树递归填充到 QTreeWidget"""
+        for subfolder in folder_node.subfolders:
+            folder_item = QtWidgets.QTreeWidgetItem([subfolder.name])
             folder_item.setFlags(
                 folder_item.flags() | QtCore.Qt.ItemIsUserCheckable
             )
             folder_item.setCheckState(0, QtCore.Qt.Unchecked)
+            folder_item.setData(0, QtCore.Qt.UserRole, "folder")
 
-            for i in range(1, 4):
-                child = QtWidgets.QTreeWidgetItem([
-                    f"时间线_{folder.GetName()}_{i}",
-                    f"0:{i:02d}:00",
-                    "24"
+            # 递归填充子文件夹
+            self._populate_tree(folder_item, subfolder)
+
+            # 填充时间线
+            for tl in subfolder.timelines:
+                tl_item = QtWidgets.QTreeWidgetItem([
+                    tl.name, tl.duration, tl.fps
                 ])
-                child.setFlags(child.flags() | QtCore.Qt.ItemIsUserCheckable)
-                child.setCheckState(0, QtCore.Qt.Unchecked)
-                folder_item.addChild(child)
+                tl_item.setFlags(
+                    tl_item.flags() | QtCore.Qt.ItemIsUserCheckable
+                )
+                tl_item.setCheckState(0, QtCore.Qt.Unchecked)
+                tl_item.setData(0, QtCore.Qt.UserRole, "timeline")
+                folder_item.addChild(tl_item)
 
-            self._folder_tree.addTopLevelItem(folder_item)
+            parent_item.addChild(folder_item)
             folder_item.setExpanded(True)
+
+        # 根层级的时间线 (不属于任何子文件夹)
+        for tl in folder_node.timelines:
+            tl_item = QtWidgets.QTreeWidgetItem([
+                tl.name, tl.duration, tl.fps
+            ])
+            tl_item.setFlags(
+                tl_item.flags() | QtCore.Qt.ItemIsUserCheckable
+            )
+            tl_item.setCheckState(0, QtCore.Qt.Unchecked)
+            tl_item.setData(0, QtCore.Qt.UserRole, "timeline")
+            parent_item.addChild(tl_item)

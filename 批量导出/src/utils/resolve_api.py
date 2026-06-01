@@ -168,6 +168,98 @@ class ResolveAPI:
     def get_bit_depth(self) -> list:
         return ["8-bit", "10-bit", "16-bit"]
 
+    # ── 媒体池遍历 ──────────────────────────────────
+
+    def get_subfolder_list(self, folder) -> list:
+        if self._is_mock:
+            return folder.GetSubFolderList()
+        return folder.GetSubFolderList()
+
+    def get_clip_list(self, folder) -> list:
+        if self._is_mock:
+            return folder.GetClipList()
+        return folder.GetClipList()
+
+    def get_folder_name(self, folder) -> str:
+        if self._is_mock:
+            return folder.GetName()
+        return folder.GetName()
+
+    def get_clip_name(self, clip) -> str:
+        if self._is_mock:
+            return getattr(clip, 'GetName', lambda: '')()
+        return clip.GetName()
+
+    # ── 时间线属性 ──────────────────────────────────
+
+    def get_timeline_name(self, timeline) -> str:
+        if self._is_mock:
+            return timeline.GetName()
+        return timeline.GetName()
+
+    def get_timeline_fps(self, timeline) -> str:
+        if self._is_mock:
+            return "24"
+        try:
+            fps = timeline.GetSetting("timelineFrameRate")
+            return str(fps)
+        except Exception:
+            return "24"
+
+    def get_timeline_duration(self, timeline) -> str:
+        """返回时间线时长的格式化字符串 HH:MM:SS"""
+        start = self.get_timeline_start_frame(timeline)
+        end = self.get_timeline_end_frame(timeline)
+        fps_str = self.get_timeline_fps(timeline)
+        try:
+            fps = float(fps_str)
+        except (ValueError, TypeError):
+            fps = 24.0
+        if fps <= 0:
+            fps = 24.0
+        frame_count = end - start
+        total_seconds = int(frame_count / fps)
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        return f"{hours}:{minutes:02d}:{seconds:02d}"
+
+    def get_timeline_start_frame(self, timeline) -> int:
+        if self._is_mock:
+            return timeline.GetStartFrame()
+        return timeline.GetStartFrame()
+
+    def get_timeline_end_frame(self, timeline) -> int:
+        if self._is_mock:
+            return timeline.GetEndFrame()
+        return timeline.GetEndFrame()
+
+    def get_project_name(self) -> str:
+        if self._is_mock:
+            return "Mock项目"
+        return self.get_current_project().GetName()
+
+    # ── 时间线查找工具 ──────────────────────────────
+
+    def find_timeline_in_folder(self, folder, timeline_name: str):
+        """在文件夹的 clip 列表中查找匹配名称的时间线 clip"""
+        clips = self.get_clip_list(folder)
+        for clip in clips:
+            clip_name = self.get_clip_name(clip)
+            if clip_name == timeline_name:
+                return clip
+        return None
+
+    def get_all_timelines_map(self) -> dict:
+        """返回 {时间线名称: 时间线对象} 的映射"""
+        count = self.get_timeline_count()
+        result = {}
+        for i in range(1, count + 1):
+            tl = self.get_timeline_by_index(i)
+            name = self.get_timeline_name(tl)
+            result[name] = tl
+        return result
+
 
 # ── Mock 对象（用于无 Resolve 环境的开发和测试）───
 
