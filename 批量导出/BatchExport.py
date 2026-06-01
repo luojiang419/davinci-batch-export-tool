@@ -103,7 +103,10 @@ def main():
 def _show_error(msg: str):
     """显示错误对话框"""
     try:
-        from PySide2 import QtWidgets
+        try:
+            from PySide2 import QtWidgets
+        except ImportError:
+            from PySide6 import QtWidgets
         app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
         QtWidgets.QMessageBox.critical(None, "批量导出插件 - 错误", msg)
     except Exception:

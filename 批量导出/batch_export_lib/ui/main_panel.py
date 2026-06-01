@@ -4,8 +4,7 @@
 左侧: 时间线浏览器 (S2实现)
 右侧: 导出设置面板 (S3实现)
 """
-from PySide2 import QtWidgets, QtCore
-
+from ..utils.qt_compat import QtWidgets, QtCore
 from ..utils.resolve_api import get_api
 from ..core.export_settings_model import ExportSettings
 from ..core.naming_engine import get_naming_engine
