@@ -7,6 +7,7 @@
 from PySide2 import QtWidgets, QtCore
 
 from ..utils.resolve_api import get_api
+from ..core.export_settings_model import ExportSettings
 
 
 class BatchExportPanel(QtWidgets.QWidget):
@@ -152,7 +153,7 @@ class BatchExportPanel(QtWidgets.QWidget):
         group = QtWidgets.QGroupBox("视频")
         layout = QtWidgets.QVBoxLayout(group)
 
-        # 分辨率
+        # 分辨率 + 帧率
         row1 = QtWidgets.QHBoxLayout()
         row1.addWidget(QtWidgets.QLabel("分辨率:"))
         self._resolution_combo = QtWidgets.QComboBox()
@@ -160,7 +161,6 @@ class BatchExportPanel(QtWidgets.QWidget):
         self._resolution_combo.setMinimumWidth(160)
         row1.addWidget(self._resolution_combo)
 
-        # 帧率
         row1.addWidget(QtWidgets.QLabel("帧率:"))
         self._framerate_combo = QtWidgets.QComboBox()
         self._framerate_combo.addItems(self._api.get_frame_rates())
@@ -168,6 +168,24 @@ class BatchExportPanel(QtWidgets.QWidget):
         row1.addWidget(self._framerate_combo)
         row1.addStretch()
         layout.addLayout(row1)
+
+        # 自定义分辨率 (默认隐藏)
+        self._custom_res_widget = QtWidgets.QWidget()
+        custom_layout = QtWidgets.QHBoxLayout(self._custom_res_widget)
+        custom_layout.setContentsMargins(0, 0, 0, 0)
+        custom_layout.addWidget(QtWidgets.QLabel("自定义宽×高:"))
+        self._custom_width_edit = QtWidgets.QLineEdit("1920")
+        self._custom_width_edit.setFixedWidth(60)
+        self._custom_width_edit.setValidator(QtWidgets.QIntValidator(1, 99999))
+        custom_layout.addWidget(self._custom_width_edit)
+        custom_layout.addWidget(QtWidgets.QLabel("×"))
+        self._custom_height_edit = QtWidgets.QLineEdit("1080")
+        self._custom_height_edit.setFixedWidth(60)
+        self._custom_height_edit.setValidator(QtWidgets.QIntValidator(1, 99999))
+        custom_layout.addWidget(self._custom_height_edit)
+        custom_layout.addStretch()
+        self._custom_res_widget.setVisible(False)
+        layout.addWidget(self._custom_res_widget)
 
         # 质量
         row2 = QtWidgets.QHBoxLayout()
@@ -187,6 +205,55 @@ class BatchExportPanel(QtWidgets.QWidget):
         row2.addStretch()
         layout.addLayout(row2)
 
+        # 编码配置行
+        row3 = QtWidgets.QHBoxLayout()
+        row3.addWidget(QtWidgets.QLabel("编码档次:"))
+        self._encoding_profile_combo = QtWidgets.QComboBox()
+        self._encoding_profile_combo.addItems(["Auto", "Baseline", "Main", "High"])
+        row3.addWidget(self._encoding_profile_combo)
+
+        row3.addWidget(QtWidgets.QLabel("关键帧间隔:"))
+        self._keyframe_spin = QtWidgets.QSpinBox()
+        self._keyframe_spin.setRange(0, 300)
+        self._keyframe_spin.setValue(0)
+        self._keyframe_spin.setSuffix(" 帧")
+        self._keyframe_spin.setToolTip("0 = 自动")
+        row3.addWidget(self._keyframe_spin)
+        row3.addStretch()
+        layout.addLayout(row3)
+
+        # 高级选项行
+        row4 = QtWidgets.QHBoxLayout()
+        row4.addWidget(QtWidgets.QLabel("数据级别:"))
+        self._data_levels_combo = QtWidgets.QComboBox()
+        self._data_levels_combo.addItems(["Auto", "Video", "Full"])
+        row4.addWidget(self._data_levels_combo)
+
+        row4.addWidget(QtWidgets.QLabel("色彩空间:"))
+        self._color_space_combo = QtWidgets.QComboBox()
+        self._color_space_combo.addItems([
+            "Same as timeline",
+            "Rec.709",
+            "Rec.2020",
+            "Rec.2100 PQ",
+            "Rec.2100 HLG",
+            "P3-D65",
+            "sRGB",
+        ])
+        self._color_space_combo.setMinimumWidth(110)
+        row4.addWidget(self._color_space_combo)
+        row4.addStretch()
+        layout.addLayout(row4)
+
+        # 复选框行
+        row5 = QtWidgets.QHBoxLayout()
+        self._alpha_check = QtWidgets.QCheckBox("导出Alpha通道")
+        row5.addWidget(self._alpha_check)
+        self._bypass_check = QtWidgets.QCheckBox("可能时跳过重新编码")
+        row5.addWidget(self._bypass_check)
+        row5.addStretch()
+        layout.addLayout(row5)
+
         return group
 
     def _build_audio_group(self) -> QtWidgets.QGroupBox:
@@ -205,6 +272,14 @@ class BatchExportPanel(QtWidgets.QWidget):
         self._bit_depth_combo = QtWidgets.QComboBox()
         self._bit_depth_combo.addItems(self._api.get_bit_depth())
         row.addWidget(self._bit_depth_combo)
+
+        row.addWidget(QtWidgets.QLabel("比特率:"))
+        self._audio_bitrate_combo = QtWidgets.QComboBox()
+        self._audio_bitrate_combo.addItems([
+            "128 kbps", "192 kbps", "256 kbps", "320 kbps"
+        ])
+        self._audio_bitrate_combo.setCurrentText("192 kbps")
+        row.addWidget(self._audio_bitrate_combo)
         row.addStretch()
         layout.addLayout(row)
 
@@ -297,6 +372,7 @@ class BatchExportPanel(QtWidgets.QWidget):
     def _connect_signals(self):
         """连接信号槽"""
         self._format_combo.currentTextChanged.connect(self._on_format_changed)
+        self._resolution_combo.currentTextChanged.connect(self._on_resolution_changed)
         self._quality_slider.valueChanged.connect(self._on_quality_changed)
         self._browse_btn.clicked.connect(self._on_browse_output)
         self._export_btn.clicked.connect(self._on_start_export)
@@ -309,6 +385,10 @@ class BatchExportPanel(QtWidgets.QWidget):
         """格式切换时更新编码器选项"""
         self._video_codec_combo.clear()
         self._video_codec_combo.addItems(self._api.get_video_codecs(fmt_name))
+
+    def _on_resolution_changed(self, res_text: str):
+        """分辨率切换 - 显示/隐藏自定义宽高输入"""
+        self._custom_res_widget.setVisible(res_text == "自定义")
 
     def _on_quality_changed(self, value: int):
         self._quality_label.setText(str(value))
@@ -373,8 +453,8 @@ class BatchExportPanel(QtWidgets.QWidget):
             )
             return
 
-        output_path = self._output_path_edit.text().strip()
-        if not output_path:
+        settings = self.collect_settings()
+        if not settings.output_path:
             QtWidgets.QMessageBox.warning(
                 self, "提示", "请先选择导出文件夹"
             )
@@ -382,7 +462,8 @@ class BatchExportPanel(QtWidgets.QWidget):
 
         names = [s["name"] for s in selected]
         self._status_label.setText(
-            f"准备导出 {len(selected)} 条时间线: {', '.join(names[:3])}"
+            f"准备导出 {len(selected)} 条时间线到 {settings.output_path}: "
+            f"{', '.join(names[:3])}"
             f"{'...' if len(names) > 3 else ''}"
         )
 
@@ -415,6 +496,36 @@ class BatchExportPanel(QtWidgets.QWidget):
                 })
             # 递归处理子项
             self._collect_checked(item, result)
+
+    def collect_settings(self) -> ExportSettings:
+        """收集当前UI中所有导出设置，返回结构化数据"""
+        quality_text = self._quality_combo.currentText()
+        quality_value = -1 if quality_text == "自动" else self._quality_slider.value()
+
+        custom_w = int(self._custom_width_edit.text()) if self._custom_width_edit.text() else 1920
+        custom_h = int(self._custom_height_edit.text()) if self._custom_height_edit.text() else 1080
+
+        return ExportSettings(
+            format=self._format_combo.currentText(),
+            video_codec=self._video_codec_combo.currentText(),
+            audio_codec=self._audio_codec_combo.currentText(),
+            resolution=self._resolution_combo.currentText(),
+            custom_width=custom_w,
+            custom_height=custom_h,
+            frame_rate=self._framerate_combo.currentText(),
+            quality=quality_value,
+            data_levels=self._data_levels_combo.currentText(),
+            color_space_tag=self._color_space_combo.currentText(),
+            alpha_channel=self._alpha_check.isChecked(),
+            bypass_reencode=self._bypass_check.isChecked(),
+            keyframe_interval=self._keyframe_spin.value(),
+            encoding_profile=self._encoding_profile_combo.currentText(),
+            sample_rate=self._sample_rate_combo.currentText(),
+            bit_depth=self._bit_depth_combo.currentText(),
+            audio_bitrate=self._audio_bitrate_combo.currentText(),
+            naming_template=self._naming_edit.text().strip(),
+            output_path=self._output_path_edit.text().strip(),
+        )
 
     # ── 公开方法 ──
 
