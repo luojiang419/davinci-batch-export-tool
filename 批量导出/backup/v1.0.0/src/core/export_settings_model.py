@@ -124,41 +124,6 @@ class ExportSettings:
         }
         return mapping.get(self.audio_codec, "aac")
 
-    def to_dict(self) -> dict:
-        """序列化为字典"""
-        return {
-            "format": self.format,
-            "video_codec": self.video_codec,
-            "audio_codec": self.audio_codec,
-            "resolution": self.resolution,
-            "custom_width": self.custom_width,
-            "custom_height": self.custom_height,
-            "frame_rate": self.frame_rate,
-            "quality": self.quality,
-            "data_levels": self.data_levels,
-            "color_space_tag": self.color_space_tag,
-            "color_space_gamma": self.color_space_gamma,
-            "bypass_reencode": self.bypass_reencode,
-            "alpha_channel": self.alpha_channel,
-            "keyframe_interval": self.keyframe_interval,
-            "encoding_profile": self.encoding_profile,
-            "multi_pass": self.multi_pass,
-            "pixel_aspect": self.pixel_aspect,
-            "sample_rate": self.sample_rate,
-            "bit_depth": self.bit_depth,
-            "audio_bitrate": self.audio_bitrate,
-            "audio_channels": self.audio_channels,
-            "naming_template": self.naming_template,
-            "output_path": self.output_path,
-            "use_unique_filenames": self.use_unique_filenames,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "ExportSettings":
-        """从字典反序列化"""
-        return cls(**{k: v for k, v in data.items()
-                      if k in cls.__dataclass_fields__})
-
 
 # ── 预设管理 ──────────────────────────────────────────
 
@@ -169,20 +134,3 @@ class ExportPreset:
     settings: ExportSettings = field(default_factory=ExportSettings)
     created_at: str = ""
     description: str = ""
-
-    def to_dict(self) -> dict:
-        return {
-            "name": self.name,
-            "settings": self.settings.to_dict(),
-            "created_at": self.created_at,
-            "description": self.description,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "ExportPreset":
-        return cls(
-            name=data.get("name", ""),
-            settings=ExportSettings.from_dict(data.get("settings", {})),
-            created_at=data.get("created_at", ""),
-            description=data.get("description", ""),
-        )

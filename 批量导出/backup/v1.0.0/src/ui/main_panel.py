@@ -10,7 +10,6 @@ from ..utils.resolve_api import get_api
 from ..core.export_settings_model import ExportSettings
 from ..core.naming_engine import get_naming_engine
 from ..core.export_engine import ExportEngine
-from ..core.preset_manager import PresetManager
 
 
 class BatchExportPanel(QtWidgets.QWidget):
@@ -19,10 +18,8 @@ class BatchExportPanel(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._api = get_api()
-        self._preset_mgr = PresetManager()
         self._init_ui()
         self._connect_signals()
-        self._load_presets()
 
     def _init_ui(self):
         """初始化UI布局"""
@@ -385,9 +382,6 @@ class BatchExportPanel(QtWidgets.QWidget):
         self._export_btn.clicked.connect(self._on_start_export)
         self._cancel_btn.clicked.connect(self._on_cancel)
         self._folder_tree.itemChanged.connect(self._on_tree_item_changed)
-        self._preset_combo.currentTextChanged.connect(self._on_preset_selected)
-        self._preset_save_btn.clicked.connect(self._on_save_preset)
-        self._preset_delete_btn.clicked.connect(self._on_delete_preset)
 
     # ── 信号处理 ──
 
@@ -548,118 +542,6 @@ class BatchExportPanel(QtWidgets.QWidget):
         self._status_label.setText("已取消")
         if self._api.is_connected:
             self._api.delete_all_render_jobs()
-
-    def _on_preset_selected(self, name: str):
-        """预设选择 - 加载预设设置到UI"""
-        if not name or name == "自定义":
-            return
-        settings = self._preset_mgr.load_preset_settings(name)
-        if settings:
-            self.apply_settings(settings)
-
-    def _on_save_preset(self):
-        """保存当前设置为预设"""
-        name, ok = QtWidgets.QInputDialog.getText(
-            self, "保存预设", "预设名称:"
-        )
-        if ok and name.strip():
-            self._preset_mgr.save_preset(name.strip(), self.collect_settings())
-            self._load_presets()
-            idx = self._preset_combo.findText(name.strip())
-            if idx >= 0:
-                self._preset_combo.setCurrentIndex(idx)
-            self._status_label.setText(f"预设已保存: {name.strip()}")
-
-    def _on_delete_preset(self):
-        """删除选中的预设"""
-        name = self._preset_combo.currentText()
-        if name == "自定义":
-            return
-        reply = QtWidgets.QMessageBox.question(
-            self, "确认删除", f"确定要删除预设 \"{name}\" 吗？",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-        )
-        if reply == QtWidgets.QMessageBox.Yes:
-            self._preset_mgr.delete_preset(name)
-            self._load_presets()
-
-    def _load_presets(self):
-        """加载预设列表到下拉框"""
-        self._preset_combo.blockSignals(True)
-        self._preset_combo.clear()
-        self._preset_combo.addItem("自定义")
-        for name in self._preset_mgr.get_preset_names():
-            self._preset_combo.addItem(name)
-        self._preset_combo.setCurrentIndex(0)
-        self._preset_combo.blockSignals(False)
-
-    def apply_settings(self, settings: ExportSettings):
-        """将 ExportSettings 应用到UI控件"""
-        # 格式
-        idx = self._format_combo.findText(settings.format)
-        if idx >= 0:
-            self._format_combo.setCurrentIndex(idx)
-
-        # 视频编码器
-        idx = self._video_codec_combo.findText(settings.video_codec)
-        if idx >= 0:
-            self._video_codec_combo.setCurrentIndex(idx)
-
-        # 音频编码器
-        idx = self._audio_codec_combo.findText(settings.audio_codec)
-        if idx >= 0:
-            self._audio_codec_combo.setCurrentIndex(idx)
-
-        # 分辨率
-        idx = self._resolution_combo.findText(settings.resolution)
-        if idx >= 0:
-            self._resolution_combo.setCurrentIndex(idx)
-        self._custom_width_edit.setText(str(settings.custom_width))
-        self._custom_height_edit.setText(str(settings.custom_height))
-
-        # 帧率
-        idx = self._framerate_combo.findText(settings.frame_rate)
-        if idx >= 0:
-            self._framerate_combo.setCurrentIndex(idx)
-
-        # 质量
-        self._quality_slider.setValue(
-            settings.quality if settings.quality > 0 else 85
-        )
-        quality_idx = 0 if settings.quality < 0 else 1
-        if quality_idx < self._quality_combo.count():
-            self._quality_combo.setCurrentIndex(quality_idx)
-
-        # 高级视频
-        idx = self._data_levels_combo.findText(settings.data_levels)
-        if idx >= 0:
-            self._data_levels_combo.setCurrentIndex(idx)
-        idx = self._color_space_combo.findText(settings.color_space_tag)
-        if idx >= 0:
-            self._color_space_combo.setCurrentIndex(idx)
-        self._alpha_check.setChecked(settings.alpha_channel)
-        self._bypass_check.setChecked(settings.bypass_reencode)
-        self._keyframe_spin.setValue(settings.keyframe_interval)
-        idx = self._encoding_profile_combo.findText(settings.encoding_profile)
-        if idx >= 0:
-            self._encoding_profile_combo.setCurrentIndex(idx)
-
-        # 音频
-        idx = self._sample_rate_combo.findText(settings.sample_rate)
-        if idx >= 0:
-            self._sample_rate_combo.setCurrentIndex(idx)
-        idx = self._bit_depth_combo.findText(settings.bit_depth)
-        if idx >= 0:
-            self._bit_depth_combo.setCurrentIndex(idx)
-        idx = self._audio_bitrate_combo.findText(settings.audio_bitrate)
-        if idx >= 0:
-            self._audio_bitrate_combo.setCurrentIndex(idx)
-
-        # 命名
-        self._naming_edit.setText(settings.naming_template)
-
-        # 输出路径
-        self._output_path_edit.setText(settings.output_path)
 
     def _get_selected_timelines(self) -> list:
         """递归遍历树，获取所有勾选的时间线节点 (名称, 父文件夹名)"""
