@@ -4,10 +4,13 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from batch_export_lib import GetUI
 from batch_export_lib.utils.qt_compat import QtWidgets
+from batch_export_lib.ui.resolve_theme import apply_dark_theme
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+apply_dark_theme(app)
+
+from batch_export_lib import GetUI
 
 panel = GetUI(None)
 panel.setWindowTitle("Batch Export (Mock Mode)")
