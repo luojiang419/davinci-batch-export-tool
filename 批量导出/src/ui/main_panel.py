@@ -9,6 +9,7 @@ from PySide2 import QtWidgets, QtCore
 from ..utils.resolve_api import get_api
 from ..core.export_settings_model import ExportSettings
 from ..core.naming_engine import get_naming_engine
+from ..core.export_engine import ExportEngine
 
 
 class BatchExportPanel(QtWidgets.QWidget):
@@ -470,7 +471,7 @@ class BatchExportPanel(QtWidgets.QWidget):
         self._update_parent_check(parent.parent())
 
     def _on_start_export(self):
-        """开始导出 (S5 实现核心逻辑)"""
+        """开始导出"""
         selected = self._get_selected_timelines()
         if not selected:
             QtWidgets.QMessageBox.warning(
@@ -485,12 +486,57 @@ class BatchExportPanel(QtWidgets.QWidget):
             )
             return
 
-        names = [s["name"] for s in selected]
+        # 禁用导出按钮防止重复点击
+        self._export_btn.setEnabled(False)
+        self._export_btn.setText("导出中...")
+        self._cancel_btn.setEnabled(True)
+
+        # 创建导出引擎
+        engine = ExportEngine()
+        jobs = engine.create_jobs(selected, settings)
+
+        names = [j.output_filename for j in jobs[:3]]
         self._status_label.setText(
-            f"准备导出 {len(selected)} 条时间线到 {settings.output_path}: "
-            f"{', '.join(names[:3])}"
-            f"{'...' if len(names) > 3 else ''}"
+            f"导出 {len(jobs)} 个文件到 {settings.output_path}: "
+            f"{', '.join(names)}"
+            f"{'...' if len(jobs) > 3 else ''}"
         )
+
+        # 执行导出
+        success = engine.execute(
+            settings,
+            progress_callback=self._on_export_progress,
+            log_callback=self._on_export_log,
+        )
+
+        # 恢复UI
+        self._export_btn.setEnabled(True)
+        self._export_btn.setText("开始导出")
+        self._cancel_btn.setEnabled(False)
+
+        status = engine.get_status()
+        if success:
+            self._status_label.setText(
+                f"导出完成: {status['completed']} 个文件已保存"
+            )
+            QtWidgets.QMessageBox.information(
+                self, "导出完成",
+                f"成功导出 {status['completed']} 条时间线到:\n{settings.output_path}"
+            )
+        else:
+            self._status_label.setText(
+                f"导出结束: {status['completed']} 成功, {status['failed']} 失败"
+            )
+
+    def _on_export_progress(self, current: int, total: int, name: str):
+        """导出进度回调"""
+        self._status_label.setText(
+            f"正在导出 [{current}/{total}]: {name}"
+        )
+
+    def _on_export_log(self, message: str):
+        """导出日志回调"""
+        self._status_label.setText(message)
 
     def _on_cancel(self):
         self._status_label.setText("已取消")
