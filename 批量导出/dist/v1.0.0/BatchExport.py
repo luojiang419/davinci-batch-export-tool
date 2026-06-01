@@ -3,7 +3,7 @@
 """
 BatchExport - DaVinci Resolve 19+ Fusion Script
 
-Install: Fusion\Scripts\Utility\
+Install: Fusion/Scripts/Utility
 Usage: Workspace > Scripts > Utility > BatchExport
 """
 import sys
@@ -37,6 +37,18 @@ def _show_error(msg: str):
     except Exception as e:
         _log(f"Failed to show error dialog: {e}")
         print(f"ERROR: {msg}")
+
+
+def _get_script_dir():
+    file_path = globals().get("__file__")
+    if file_path:
+        return os.path.dirname(os.path.abspath(file_path))
+
+    argv0 = sys.argv[0] if sys.argv and sys.argv[0] else ""
+    if argv0:
+        return os.path.dirname(os.path.abspath(argv0))
+
+    return os.getcwd()
 
 
 # ── Resolve API ─────────────────────────────────────────────────────
@@ -80,11 +92,8 @@ def _get_resolve():
 def main():
     _log("=== BatchExport started ===")
 
-    # Setup path (Resolve doesn't set __file__)
-    try:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-    except NameError:
-        script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    # Resolve may execute scripts without defining __file__.
+    script_dir = _get_script_dir()
     _log(f"Script dir: {script_dir}")
     _log(f"sys.path: {sys.path[:3]}")
     if script_dir not in sys.path:

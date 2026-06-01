@@ -9,12 +9,24 @@ import traceback
 
 log_path = os.path.join(os.environ.get("TEMP", ""), "batch_test_log.txt")
 
+
+def _get_script_dir():
+    file_path = globals().get("__file__")
+    if file_path:
+        return os.path.dirname(os.path.abspath(file_path))
+
+    argv0 = sys.argv[0] if sys.argv and sys.argv[0] else ""
+    if argv0:
+        return os.path.dirname(os.path.abspath(argv0))
+
+    return os.getcwd()
+
 try:
     with open(log_path, "w") as f:
         f.write("Step 1: Script executed\n")
 
         # Add Utility dir to path
-        me = os.path.dirname(os.path.abspath(__file__))
+        me = _get_script_dir()
         if me not in sys.path:
             sys.path.insert(0, me)
         f.write(f"Step 2: path={me}\n")
