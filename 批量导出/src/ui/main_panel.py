@@ -8,6 +8,7 @@ from PySide2 import QtWidgets, QtCore
 
 from ..utils.resolve_api import get_api
 from ..core.export_settings_model import ExportSettings
+from ..core.naming_engine import get_naming_engine
 
 
 class BatchExportPanel(QtWidgets.QWidget):
@@ -287,24 +288,22 @@ class BatchExportPanel(QtWidgets.QWidget):
 
     def _build_naming_group(self) -> QtWidgets.QGroupBox:
         """命名规则分组"""
+        self._naming_engine = get_naming_engine()
+
         group = QtWidgets.QGroupBox("命名规则")
         layout = QtWidgets.QVBoxLayout(group)
 
         # 变量插入按钮
         var_row = QtWidgets.QHBoxLayout()
         var_row.addWidget(QtWidgets.QLabel("变量:"))
-        variables = [
-            ("{timeline}", "时间线名称"),
-            ("{date}", "日期"),
-            ("{time}", "时间"),
-            ("{index}", "序号"),
-            ("{project}", "项目名称"),
-        ]
-        for var_name, var_label in variables:
+        for var_name, var_label in self._naming_engine.get_variables().items():
             btn = QtWidgets.QPushButton(var_name)
             btn.setFixedHeight(22)
             btn.setToolTip(var_label)
             btn.setStyleSheet("font-size: 10px; padding: 2px 6px;")
+            btn.clicked.connect(
+                lambda checked, v=var_name: self._insert_variable(v)
+            )
             var_row.addWidget(btn)
         var_row.addStretch()
         layout.addLayout(var_row)
@@ -313,17 +312,21 @@ class BatchExportPanel(QtWidgets.QWidget):
         tmpl_row = QtWidgets.QHBoxLayout()
         tmpl_row.addWidget(QtWidgets.QLabel("模板:"))
         self._naming_edit = QtWidgets.QLineEdit("{timeline}_{date}_{index}")
+        self._naming_edit.textChanged.connect(self._update_naming_preview)
         tmpl_row.addWidget(self._naming_edit)
         layout.addLayout(tmpl_row)
 
         # 预览
         preview_row = QtWidgets.QHBoxLayout()
         preview_row.addWidget(QtWidgets.QLabel("预览:"))
-        self._naming_preview = QtWidgets.QLabel("我的时间线_20260601_01.mp4")
-        self._naming_preview.setStyleSheet("color: #888;")
+        self._naming_preview = QtWidgets.QLabel()
+        self._naming_preview.setStyleSheet("color: #888; font-style: italic;")
         preview_row.addWidget(self._naming_preview)
         preview_row.addStretch()
         layout.addLayout(preview_row)
+
+        # 初始化预览
+        self._update_naming_preview()
 
         return group
 
@@ -392,6 +395,28 @@ class BatchExportPanel(QtWidgets.QWidget):
 
     def _on_quality_changed(self, value: int):
         self._quality_label.setText(str(value))
+
+    def _insert_variable(self, var: str):
+        """在光标位置插入变量"""
+        cursor = self._naming_edit.cursorPosition()
+        text = self._naming_edit.text()
+        new_text = text[:cursor] + var + text[cursor:]
+        self._naming_edit.setText(new_text)
+        self._naming_edit.setCursorPosition(cursor + len(var))
+
+    def _update_naming_preview(self):
+        """更新命名预览"""
+        template = self._naming_edit.text().strip() or "{timeline}"
+        fmt = self._format_combo.currentText()
+        codec = self._video_codec_combo.currentText()
+        preview = self._naming_engine.generate_preview(
+            template,
+            timeline_name="示例时间线",
+            format=fmt,
+            codec=codec,
+        )
+        ext = ExportSettings(format=fmt).file_extension
+        self._naming_preview.setText(f"{preview}{ext}")
 
     def _on_browse_output(self):
         """选择输出文件夹"""
