@@ -43,11 +43,8 @@ if not exist "%TARGET_DIR%" (
 )
 echo.
 
-:: 源文件检查 (相对于脚本目录)
-set "SCRIPT_DIR=%~dp0.."
-pushd "%SCRIPT_DIR%"
-set "SCRIPT_DIR=%cd%"
-popd
+:: 源文件检查 (dist版本: 所有文件在脚本同级目录)
+set "SCRIPT_DIR=%~dp0"
 
 set "MAIN_SCRIPT=%SCRIPT_DIR%\BatchExport.py"
 set "SRC_DIR=%SCRIPT_DIR%\batch_export_lib"
