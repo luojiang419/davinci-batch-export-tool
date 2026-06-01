@@ -50,7 +50,7 @@ set "SCRIPT_DIR=%cd%"
 popd
 
 set "MAIN_SCRIPT=%SCRIPT_DIR%\BatchExport.py"
-set "SRC_DIR=%SCRIPT_DIR%\src"
+set "SRC_DIR=%SCRIPT_DIR%\batch_export_lib"
 
 echo 源文件检查:
 if exist "%MAIN_SCRIPT%" (
@@ -82,11 +82,10 @@ if errorlevel 1 (
 echo        Installed: %TARGET_DIR%\BatchExport.py
 
 echo [2/2] Installing modules...
-set "MODULE_TARGET=%TARGET_DIR%\BatchExport_src"
-if exist "%MODULE_TARGET%" (
-    echo        Removing old version...
-    rmdir /S /Q "%MODULE_TARGET%"
-)
+set "MODULE_TARGET=%TARGET_DIR%\batch_export_lib"
+if exist "%MODULE_TARGET%" rmdir /S /Q "%MODULE_TARGET%"
+if exist "%TARGET_DIR%\src" rmdir /S /Q "%TARGET_DIR%\src"
+if exist "%TARGET_DIR%\BatchExport_src" rmdir /S /Q "%TARGET_DIR%\BatchExport_src"
 xcopy "%SRC_DIR%\*" "%MODULE_TARGET%\" /E /I /Y /Q
 if errorlevel 1 (
     echo [ERROR] Module copy failed.
@@ -99,7 +98,7 @@ echo        Installed: %MODULE_TARGET%
 echo.
 echo 验证安装:
 if exist "%TARGET_DIR%\BatchExport.py" (echo   [OK] BatchExport.py) else (echo   [FAIL] BatchExport.py)
-if exist "%MODULE_TARGET%\__init__.py" (echo   [OK] BatchExport_src\__init__.py) else (echo   [FAIL] __init__.py)
+if exist "%MODULE_TARGET%\__init__.py" (echo   [OK] batch_export_lib\__init__.py) else (echo   [FAIL] __init__.py)
 if exist "%MODULE_TARGET%\ui\main_panel.py" (echo   [OK] ui\main_panel.py) else (echo   [FAIL] main_panel.py)
 if exist "%MODULE_TARGET%\core\export_engine.py" (echo   [OK] core\export_engine.py) else (echo   [FAIL] export_engine.py)
 if exist "%MODULE_TARGET%\utils\resolve_api.py" (echo   [OK] utils\resolve_api.py) else (echo   [FAIL] resolve_api.py)

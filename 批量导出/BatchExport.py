@@ -64,39 +64,50 @@ def _get_resolve():
 
 # ── 入口 ───────────────────────────────────────────────────────────
 def main():
+    # 确保脚本所在目录在路径中
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+
+    # 尝试导入插件包
+    try:
+        from batch_export_lib import GetUI
+    except Exception as e:
+        _show_error(f"插件导入失败:\n{script_dir}\\src\\\n\n{str(e)}")
+        return
+
+    # 连接 Resolve
     resolve = _get_resolve()
     if resolve is None:
-        # 显示错误对话框
-        from PySide2 import QtWidgets
-        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-        QtWidgets.QMessageBox.critical(
-            None, "错误",
-            "无法连接到 DaVinci Resolve。\n请确认:\n"
+        _show_error(
+            "无法连接 DaVinci Resolve。\n\n请确认:\n"
             "1. DaVinci Resolve 正在运行\n"
             "2. 已打开一个项目\n"
             "3. 偏好设置 > 系统 > 常规 > 外部脚本 = 本地"
         )
         return
 
-    # 确保 src/ 包在路径中
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    if script_dir not in sys.path:
-        sys.path.insert(0, script_dir)
-
-    # 导入插件模块（兼容安装名 BatchExport_src 和本地名 src）
+    # 显示面板
     try:
-        from BatchExport_src import GetUI
-    except ImportError:
-        from src import GetUI
+        panel = GetUI(resolve)
+        panel.setWindowTitle("批量导出时间线")
+        panel.resize(960, 640)
+        panel.show()
+        return panel
+    except Exception as e:
+        _show_error(f"面板加载失败:\n{str(e)}")
+        import traceback
+        traceback.print_exc()
 
-    # 获取面板并显示
-    panel = GetUI(resolve)
-    panel.setWindowTitle("批量导出时间线")
-    panel.resize(960, 640)
-    panel.show()
 
-    # 保持窗口运行(Resolve 环境下由 Resolve 托管事件循环)
-    return panel
+def _show_error(msg: str):
+    """显示错误对话框"""
+    try:
+        from PySide2 import QtWidgets
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        QtWidgets.QMessageBox.critical(None, "批量导出插件 - 错误", msg)
+    except Exception:
+        print(f"ERROR: {msg}")
 
 
 # 支持直接运行

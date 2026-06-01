@@ -5,7 +5,6 @@ title 批量导出时间线 - 独立运行 (Mock模式)
 echo ============================================
 echo   批量导出时间线 - Mock 测试模式
 echo   此模式不需要 DaVinci Resolve 运行
-echo   使用 Mock 数据验证 UI 和功能
 echo ============================================
 echo.
 
@@ -28,7 +27,6 @@ if "%PYTHON%"=="" (
 echo Using: %PYTHON%
 echo.
 
-:: 本地目录使用 src/ 包名; 安装后使用 BatchExport_src/
-"%PYTHON%" -c "import sys, os; sys.path.insert(0, r'%~dp0'); from src import GetUI; panel = GetUI(None); panel.setWindowTitle('批量导出时间线 (Mock)'); panel.resize(960, 640); panel.show(); from PySide2 import QtWidgets; app = QtWidgets.QApplication.instance(); app and app.exec_()"
+"%PYTHON%" -c "import sys, os; sys.path.insert(0, r'%~dp0'); from batch_export_lib import GetUI; panel = GetUI(None); panel.setWindowTitle('批量导出时间线 (Mock)'); panel.resize(960, 640); panel.show(); from PySide2 import QtWidgets; app = QtWidgets.QApplication.instance(); app and app.exec_()"
 
 pause
