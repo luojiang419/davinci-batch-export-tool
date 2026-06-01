@@ -5,3 +5,6 @@ try:
 except ImportError:
     from PySide6 import QtWidgets, QtCore, QtGui
     QT_VERSION = 6
+    # PySide6 把 QIntValidator 从 QtWidgets 移到了 QtGui，补回去
+    if not hasattr(QtWidgets, "QIntValidator"):
+        QtWidgets.QIntValidator = QtGui.QIntValidator

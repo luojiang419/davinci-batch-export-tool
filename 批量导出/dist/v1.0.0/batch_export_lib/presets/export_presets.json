@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-06-01 11:13:33",
+  "presets": [
+    {
+      "name": "YouTube 1080p",
+      "settings": {
+        "format": "MP4",
+        "video_codec": "H.264",
+        "audio_codec": "AAC",
+        "resolution": "1920×1080 (Full HD)",
+        "custom_width": 1920,
+        "custom_height": 1080,
+        "frame_rate": "30",
+        "quality": 85,
+        "data_levels": "Auto",
+        "color_space_tag": "Same as timeline",
+        "color_space_gamma": "Same as timeline",
+        "bypass_reencode": false,
+        "alpha_channel": false,
+        "keyframe_interval": 0,
+        "encoding_profile": "Auto",
+        "multi_pass": "off",
+        "pixel_aspect": "Square",
+        "sample_rate": "48000Hz",
+        "bit_depth": "16-bit",
+        "audio_bitrate": "192 kbps",
+        "audio_channels": "Same as timeline",
+        "naming_template": "{timeline}_{date}_{index}",
+        "output_path": "",
+        "use_unique_filenames": true
+      },
+      "created_at": "",
+      "description": "YouTube 1080p 30fps H.264"
+    }
+  ]
+}
