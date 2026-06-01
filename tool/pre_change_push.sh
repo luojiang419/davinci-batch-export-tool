@@ -1,30 +1,54 @@
-#!/bin/bash
-# 修改前检查点提交 + 推送
-# 优先使用 Windows 侧 Git 凭据链路
-set -e
+#!/usr/bin/env bash
 
-MESSAGE="${1:-chore: pre-change checkpoint}"
+set -euo pipefail
 
-echo "=== 修改前检查点推送 ==="
-echo "提交信息: $MESSAGE"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
 
-# Stage all changes
-git add -A
-
-# Only commit if there are staged changes
-if git diff --cached --quiet; then
-  echo "没有需要提交的更改"
+if command -v cmd.exe >/dev/null 2>&1 && cmd.exe /c git --version >/dev/null 2>&1; then
+  GIT_CMD=(cmd.exe /c git)
+  echo "检测到 Win 侧 Git，优先复用 Windows 已登录的 GitHub 凭据。"
 else
-  git commit -m "$MESSAGE"
-  echo "已提交"
+  GIT_CMD=(git)
 fi
 
-# Push using Windows Git (cmd.exe) to use Windows credential manager
-if command -v cmd.exe &>/dev/null; then
-  echo "使用 Windows Git 推送..."
-  cmd.exe /c "git push origin main 2>&1"
-else
-  git push origin main
+git_run() {
+  "${GIT_CMD[@]}" "$@"
+}
+
+git_capture() {
+  git_run "$@" | tr -d '\r'
+}
+
+if ! git_run rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "当前目录不是 Git 仓库，无法执行修改前推送。"
+  exit 1
 fi
 
-echo "=== 推送完成 ==="
+if ! git_run remote get-url origin >/dev/null 2>&1; then
+  echo "未配置 origin 远端，请先配置 GitHub 仓库地址。"
+  exit 1
+fi
+
+branch="$(git_capture symbolic-ref --short HEAD 2>/dev/null || echo main)"
+message="${*:-chore: pre-change checkpoint $(date '+%Y-%m-%d %H:%M:%S')}"
+
+has_uncommitted_changes=false
+if ! git_run diff --quiet || ! git_run diff --cached --quiet; then
+  has_uncommitted_changes=true
+fi
+
+if [ -n "$(git_capture ls-files --others --exclude-standard)" ]; then
+  has_uncommitted_changes=true
+fi
+
+if [ "$has_uncommitted_changes" = true ]; then
+  git_run add -A
+  git_run commit -m "$message"
+else
+  echo "当前没有本地改动，直接执行推送。"
+fi
+
+git_run push origin "$branch"
+
+echo "修改前推送完成：origin/$branch"
